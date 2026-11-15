@@ -1,0 +1,55 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'app.nook.tv'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'app.bay65.tv'
+        minSdk 26
+        targetSdk 35
+        versionCode 5
+        versionName '0.2.2'
+        testInstrumentationRunner 'app.nook.tv.NookChecks'
+    }
+    def releaseStore = System.getenv('NOOK_STORE_FILE')
+    signingConfigs {
+        if (releaseStore) {
+            nookRelease {
+                storeFile file(releaseStore)
+                storePassword System.getenv('NOOK_STORE_PASSWORD')
+                keyAlias 'nook'
+                keyPassword System.getenv('NOOK_STORE_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        debug { versionNameSuffix '-dev' }
+        release {
+            minifyEnabled false
+            vcsInfo { include = false }
+            if (releaseStore) signingConfig signingConfigs.nookRelease
+        }
+        tv {
+            initWith release
+            versionNameSuffix '-tv'
+            // Maintenance APKs must be signed explicitly with the original TV key.
+            signingConfig null
+            debuggable false
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    lint { abortOnError true }
+}
+
+dependencies { testImplementation 'junit:junit:4.13.2' }
+
+// Explicit final IDs avoid a public-ID change leaking into the maintenance build.
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        def ids = [debug: 'app.bay65.tv.debug', release: 'app.bay65.tv', tv: 'app.nook.tv.debug']
+        variant.applicationId.set(ids[variant.buildType])
+    }
+}

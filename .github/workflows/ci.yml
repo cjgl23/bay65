@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android build, lint and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+      - name: Build, lint and test
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :app:lintRelease :app:lintTv :app:testDebugUnitTest :app:assembleDebug :app:assembleRelease :app:assembleTv
+      - name: Verify BAY65 variant metadata
+        run: python3 -m scripts.check_apk_metadata --build-tools "$ANDROID_HOME/build-tools/36.0.0"
+  preview:
+    uses: cjgl23/github-workflows/.github/workflows/ci.yml@b25f7e44fd55ce5efd4c57175557e00789d64070
+    with:
+      project-type: generic
+      run-lint: false
+      run-build: false
+      custom-test-command: |
+        python3 -m unittest -v test_server.py scripts.test_build_signed_release
+        npm install --ignore-scripts --no-save --no-package-lock linkedom@0.18.12
+        node test_preview.cjs
+  artifacts:
+    name: Release artifact verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+      - name: Build unsigned standard release
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :app:assembleRelease
+      - name: Validate source package and temporary test-signed APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          tools="$ANDROID_HOME/build-tools/36.0.0"
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          export CI_SIGN_PASS="$(openssl rand -hex 24)"
+          keytool -genkeypair -keystore "$tmp/ci.p12" -storetype PKCS12 -storepass:env CI_SIGN_PASS -keypass:env CI_SIGN_PASS -alias ci-validation -keyalg RSA -keysize 2048 -validity 2 -dname 'CN=CI validation only'
+          "$tools/zipalign" -f 4 android/app/build/outputs/apk/release/app-release-unsigned.apk "$tmp/aligned.apk"
+          "$tools/apksigner" sign --ks "$tmp/ci.p12" --ks-key-alias ci-validation --ks-pass env:CI_SIGN_PASS --key-pass env:CI_SIGN_PASS --out "$tmp/test.apk" "$tmp/aligned.apk"
+          digest="$(keytool -exportcert -keystore "$tmp/ci.p12" -storepass:env CI_SIGN_PASS -alias ci-validation | sha256sum | cut -d' ' -f1)"
+          python3 scripts/package_release.py --out "$tmp/package" --apk "$tmp/test.apk" --cert-sha256 "$digest" --build-tools "$tools"
+          (cd "$tmp/package" && sha256sum --strict --check SHA256SUMS)
+          echo "CI-only test signature; no signing key or test APK is published."

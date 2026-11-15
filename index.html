@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BAY65 — Home is your next stop.</title>
+<meta name="description" content="BAY65 — Personalised Android TV Launcher. Your home. Your city. Your screen.">
+<style>
+:root{color-scheme:dark;--ink:#ffffff;--muted:#a1b8c7;--panel:rgba(12,24,37,.95);--line:rgba(255,255,255,.18)}
+*{box-sizing:border-box}body{margin:0;background:#0c1825;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,select{font:inherit}button{cursor:pointer;color:inherit}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #fff;outline-offset:5px}button{border:0}#backdrop{position:fixed;inset:0;background:radial-gradient(ellipse at 17% 26%,#183346 0,transparent 58%),linear-gradient(130deg,#112838,#0c1825);background-size:cover;background-position:center;transition:opacity .6s}#shade{position:fixed;inset:0;background:linear-gradient(0deg,rgba(9,15,15,.93),rgba(9,15,15,.05) 72%),linear-gradient(90deg,rgba(9,15,15,.2),transparent)}main{position:relative;min-height:100svh;padding:4.3vh 4.5vw;display:flex;flex-direction:column;gap:30px}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:36px}.identity{display:flex;gap:18px;align-items:center}.home-mark{border:1px solid var(--line);border-radius:50%;width:46px;height:46px;display:grid;place-items:center;background:#ffffff0d}h1{font-size:22px;letter-spacing:-.4px;font-weight:550;margin:0}.eyebrow{font-size:11px;letter-spacing:2.6px;text-transform:uppercase;color:var(--muted);margin:6px 0 0}.tools{display:flex;align-items:center;gap:24px}.clock{text-align:right;font-variant-numeric:tabular-nums}.time{font-size:30px;font-weight:350;letter-spacing:-1px}.date{font-size:12px;color:var(--muted);margin-top:4px}.icon-button{border:1px solid var(--line);background:#ffffff12;border-radius:50%;width:46px;height:46px;display:grid;place-items:center}.bus{width:310px;align-self:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:21px 23px;box-shadow:0 12px 35px #0002}.bus-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.bus h2{font-size:17px;font-weight:550;margin:0 0 5px}.stop-meta{font-size:11px;color:var(--muted)}.bus-icon{color:#c9db9e}.bus table{width:100%;border-collapse:collapse;margin-top:17px;font-variant-numeric:tabular-nums}.bus th{font-size:10px;text-transform:uppercase;letter-spacing:1px;text-align:right;font-weight:500;color:var(--muted);padding:0 0 9px}.bus th:first-child{text-align:left}.bus td{padding:12px 0;border-top:1px solid var(--line);text-align:right;font-size:17px}.bus td:first-child{text-align:left;font-size:21px;font-weight:600}.bus td:nth-child(2){color:#d8edaa}.bus td:last-child{color:var(--muted);font-size:15px}.bus small{display:block;margin-top:8px;color:var(--muted);font-size:10px}.quiet-action{padding:0;background:transparent;color:var(--muted);font-size:11px;text-decoration:underline;text-underline-offset:3px}.photo-space{flex:1;min-height:9vh;display:flex;align-items:flex-end}.shelf-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.shelf-head h2{margin:0;font-size:14px;font-weight:500}.hint{color:var(--muted);font-size:11px}.apps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:18px}.app{padding:0;background:transparent;text-align:center;min-width:0}.tile{height:clamp(80px,9.6vw,145px);border-radius:17px;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px #0003;border:1px solid #ffffff15;transition:transform .16s,box-shadow .16s}.app:hover .tile,.app:focus-visible .tile{transform:translateY(-6px) scale(1.025);box-shadow:0 0 0 3px #fff,0 16px 30px #0005}.app:focus-visible{outline:none}.app-label{display:block;margin-top:12px;font-size:12px;color:#e4e6e3}.play{display:grid;place-items:center;width:42px;height:29px;border-radius:8px;background:#f03;color:white;font-size:18px;letter-spacing:0}.games-row{display:flex;align-items:center;gap:18px;margin-top:30px}.games-title{font-size:12px;color:var(--muted);margin-right:6px}.game{background:#ffffff0d;border:1px solid var(--line);border-radius:12px;padding:9px 15px 9px 9px;display:flex;align-items:center;gap:12px;text-align:left;font-size:12px}.game-art{width:37px;height:37px;border-radius:8px;display:grid;place-items:center;background:#608d4c;font-size:22px}.game:nth-of-type(2) .game-art{background:#3c5579}.footer{display:flex;justify-content:space-between;align-items:center;margin-top:20px;font-size:10px;color:#b9c1bb}.footer button{font-size:10px}.preview-label{border:1px solid var(--line);border-radius:5px;padding:4px 7px;text-transform:uppercase;letter-spacing:1.4px}
+dialog{color:var(--ink);background:#0c1825;border:1px solid #546158;border-radius:22px;width:min(600px,92vw);max-height:88vh;padding:30px;box-shadow:0 25px 90px #0009}dialog::backdrop{background:#08120fbd;backdrop-filter:blur(8px)}dialog h2{font-size:25px;font-weight:500;letter-spacing:-.6px;margin:0}dialog h3{font-size:16px;font-weight:550;margin:27px 0 10px}dialog p{font-size:13px;color:var(--muted);line-height:1.6}.dialog-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.close{background:#ffffff12;border-radius:50%;width:36px;height:36px;font-size:23px}.field{display:block;font-size:12px;margin:17px 0 7px}.input-row{display:flex;gap:12px}.input-row>*{flex:1;min-width:0}input,select{width:100%;padding:11px 12px;background:#ffffff0b;border:1px solid #657167;border-radius:8px;color:var(--ink)}option{background:#0c1825}.check-row{display:flex;gap:20px;flex-wrap:wrap;margin:15px 0}.check-row label{display:flex;align-items:center;gap:8px;font-size:14px}.check-row input{width:20px;height:20px;accent-color:#d4eab6}.button{background:#d6e8bc;color:#1b2b20;border-radius:9px;padding:12px 18px;font-size:13px;font-weight:600}.secondary{background:#ffffff12;color:var(--ink)}.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:25px}.error{color:#ffb6a7;min-height:18px;font-size:12px;margin:12px 0}.help{font-size:11px!important;margin:8px 0}.divider{border:0;border-top:1px solid var(--line);margin:25px 0}.selected-stops{list-style:none;padding:0;margin:0}.selected-stops li{border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;padding:12px 0;gap:12px;font-size:13px}.selected-stops small{display:block;color:var(--muted);margin-top:5px}.remove{background:transparent;color:#ffbaab;padding:8px;font-size:12px}.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#e4eedc;color:#17271e;border-radius:10px;padding:14px 22px;max-width:85vw;font-size:13px;z-index:5;box-shadow:0 4px 30px #0005}.toast:empty{display:none}.photo-controls{display:flex;gap:10px;flex-wrap:wrap}input[type=file]{padding:10px;font-size:12px}#photo-status{min-height:18px}.empty{color:var(--muted);font-size:13px;line-height:1.5}.bus-container{display:flex;flex-direction:column;align-items:flex-end;gap:12px}.bus-container:empty{display:none}
+@media(min-width:1500px){main{padding:5vh 5vw}.bus{width:350px;padding:25px}.bus h2{font-size:21px}.bus td{font-size:21px}.bus td:first-child{font-size:25px}.app-label,.shelf-head h2{font-size:16px}.game{font-size:15px}.hint{font-size:13px}}
+@media(max-width:800px){main{padding:25px;gap:25px}.tools{gap:15px}.bus{width:280px}.apps{grid-template-columns:repeat(3,1fr);gap:19px}.tile{height:92px}.photo-space{min-height:80px}.games-row{flex-wrap:wrap}.game{max-width:100%}.hint{display:none}.top{gap:15px}h1{font-size:18px}.home-mark{display:none}.time{font-size:25px}.footer{gap:15px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+/* Every saved stop shares one fixed-height row; cards never wrap vertically. */
+.bus-container{width:100%;height:clamp(240px,34svh,310px);align-self:stretch;flex-shrink:0;display:flex;flex-direction:row;justify-content:flex-end;align-items:stretch;gap:18px}
+.bus-container:empty{display:flex}
+.bus-container .bus{width:auto;min-width:0;flex:0 1 350px;height:100%;padding:18px 20px;display:flex;flex-direction:column;overflow:hidden;align-self:stretch}
+.bus-head>div{min-width:0;flex:1}.bus-head .quiet-action{flex-shrink:0}
+.bus h2{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:17px}
+.bus .stop-meta{margin-top:8px;line-height:1.5;min-height:3em}
+.bus .stop-meta span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bus-scroll{min-height:0;flex:1;overflow:auto;margin:12px -8px 0;padding:0 8px;scrollbar-width:thin;scrollbar-color:#839277 transparent}
+.bus-scroll:focus-visible{outline:2px solid #d6e8bc;outline-offset:-2px}
+.bus-scroll table{margin-top:0}.bus small{flex-shrink:0;padding-top:4px}
+.stop-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;max-width:270px}
+.reorder{background:#ffffff12;border:1px solid var(--line);border-radius:7px;padding:10px;font-size:12px;white-space:nowrap}
+.reorder:disabled{opacity:.35;cursor:default}
+.selected-stops li>div:first-child{min-width:0;flex:1;overflow-wrap:anywhere}
+#lta-form .button{margin-top:12px}#lta-form .button+button{margin-left:8px}
+.connection-status{min-height:2em}.bus small{line-height:1.4}
+.system-settings{display:flex;width:100%;justify-content:space-between;align-items:center;text-align:left;padding:16px 18px;font-size:15px}
+[hidden]{display:none!important}
+.settings-nav{display:grid;gap:9px}.settings-nav .system-settings{font-size:14px;padding:14px 16px}
+.settings-nav h3{margin:15px 0 3px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted)}
+.dialog-heading{display:flex;align-items:center;gap:12px}.back-button{background:#ffffff12;border-radius:8px;width:36px;height:36px;font-size:20px}
+.settings-intro{margin:0 0 18px}.app-management{list-style:none;padding:0}.app-management li{padding:15px 0;border-bottom:1px solid var(--line)}
+.app-management .app-name{display:block;font-size:14px;margin-bottom:10px}.app-management-controls{display:flex;gap:8px;align-items:center}.app-management select{flex:1;width:auto;min-width:0;font-size:12px}
+.catalog-list{display:grid;gap:8px}.catalog-list button{text-align:left;background:#ffffff0c;border:1px solid var(--line);padding:14px;border-radius:8px}
+.catalog-list button:hover,.settings-nav button:hover{background:#ffffff20}
+.mini-tile{width:65px;height:39px!important;flex-shrink:0;border-radius:7px;font-size:11px!important;letter-spacing:0!important;gap:3px;overflow:hidden;margin:0;box-shadow:none}
+.mini-tile svg{width:18px;height:21px}.mini-tile .play{width:19px;height:15px;font-size:9px;border-radius:4px}
+.tile.game-tile{background:#557748;width:100%;height:clamp(80px,9.6vw,145px);font-size:48px}.tile.space-tile{background:#3c5579}
+.games-row{flex-wrap:wrap}.app-shelf-empty{color:var(--muted);font-size:13px;margin:20px 0}
+.about-details{margin:20px 0}.about-details dt{font-size:11px;color:var(--muted);margin-top:18px}.about-details dd{margin:5px 0 0;font-size:14px;overflow-wrap:anywhere}
+.icon-button.network-unknown{color:var(--muted)}
+.apps .tile{height:auto;aspect-ratio:16/9}.app-label,.home-app-name{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.games-row .game{padding:0;overflow:hidden;width:90px;height:51px;justify-content:center}.games-row .game-art{width:100%;height:100%;border-radius:0}.games-row .mini-tile{width:100%;height:100%!important}
+.apps .tile{overflow:hidden;background-clip:padding-box}
+.app:hover .tile,.app:focus-visible .tile{box-shadow:0 0 0 3px var(--focus-ring,#d8f3a5),0 0 0 6px var(--focus-halo,#102218)}
+.games-row .game:focus-visible{outline-color:var(--focus-ring,#d8f3a5);box-shadow:0 0 0 6px var(--focus-halo,#102218)}
+.bus-empty{align-self:center;margin-left:auto;text-align:right;color:var(--muted);font-size:13px}
+@media(max-width:480px){.selected-stops li{align-items:flex-start;flex-direction:column}.stop-actions{max-width:none;justify-content:flex-start}}
+@media(max-width:800px){.bus-container{justify-content:flex-start;overflow-x:auto;overflow-y:hidden;padding-bottom:8px;scrollbar-width:thin}.bus-container .bus{flex:0 0 min(310px,85vw)}}
+.neutral-tile{background:#34463f;color:#f0f2ee;font-size:clamp(14px,1.6vw,22px);font-weight:600;text-align:center;padding:8px;letter-spacing:0}.data-credit{font-size:12px;color:var(--muted);line-height:1.45}.data-credit a{color:inherit;text-decoration:underline}
+.bus td.arrival{color:var(--muted)}
+.occupancy{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.capacity-legend{font-size:12px;color:var(--muted);text-align:left;margin-top:16px}
+.bus td.occupancy-seats,.occupancy-seats{color:#4ade80}.bus td.occupancy-standing,.occupancy-standing{color:#fb923c}.bus td.occupancy-limited,.occupancy-limited{color:#f87171}
+#settings{scrollbar-width:none}#settings::-webkit-scrollbar{display:none}
+</style>
+<div id="backdrop"></div><div id="shade"></div>
+<main>
+ <header class="top"><div class="identity"><span class="home-mark" aria-hidden="true"><svg viewBox="0 0 108 108" width="40" height="40" xmlns="http://www.w3.org/2000/svg"><path fill="#0C1825" d="M0 0h108v108H0z"/><path d="M34 78V30H54C77 30 77 52 54 52H34M54 52C81 52 81 78 54 78H45" fill="none" stroke="#53DECF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="45" cy="78" r="5" fill="#FFFFFF"/></svg></span><div><h1 aria-label="BAY65">bay<span style="color:#53decf">65</span></h1><p class="eyebrow">Home is your next stop.</p></div></div><div class="tools"><div class="clock"><div class="time" id="time"></div><div class="date" id="date"></div></div><button class="icon-button network-unknown" id="network-button" aria-label="Open TV network settings" title="Network settings · TV connection status is available in the installed app"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M2 8a16 16 0 0 1 20 0M5.5 11.5a11 11 0 0 1 13 0M9 15a5 5 0 0 1 6 0"/><circle cx="12" cy="19" r="1" fill="currentColor" stroke="none"/></svg></button><button class="icon-button" id="settings-button" aria-label="Open launcher settings"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 3-.6 2.3-2 .9-2.1-.6-2 3.4 1.6 1.7v2.5L2.3 15l2 3.4 2.2-.6 2 .9L9 21h4l.6-2.3 2-.9 2.1.6 2-3.4-1.6-1.7v-2.5L19.7 9l-2-3.4-2.2.6-2-.9L13 3z"/><circle cx="11" cy="12" r="3"/></svg></button></div></header>
+ <div id="bus-container" class="bus-container" aria-label="BAY65 Transit"></div>
+ <div class="data-credit" id="data-credit">BAY65 Transit · Bus Arrival v3 data from LTA DataMall · <a href="https://datamall.lta.gov.sg/content/datamall/en/SingaporeOpenDataLicence.html" target="_blank" rel="noopener noreferrer">Singapore Open Data Licence v1.0</a>. Independent project; estimates are not guaranteed.</div>
+ <div class="capacity-legend" aria-label="Bus capacity legend"><span class="occupancy-seats">Seats</span> · <span class="occupancy-standing">Standing</span> · <span class="occupancy-limited">Limited</span> · <span>Unknown</span></div>
+ <div class="photo-space" aria-hidden="true"></div>
+ <section aria-labelledby="apps-heading"><div class="shelf-head"><h2 id="apps-heading">Your favourites</h2><span class="hint">← → to explore · Enter to select</span></div><div class="apps" id="favourites-apps">
+  <button class="app" data-app="Netflix"><span class="tile neutral-tile" aria-hidden="true">Netflix</span><span class="app-label">Netflix</span></button>
+  <button class="app" data-app="YouTube"><span class="tile neutral-tile" aria-hidden="true">YouTube</span><span class="app-label">YouTube</span></button>
+  <button class="app" data-app="Disney+"><span class="tile neutral-tile" aria-hidden="true">Disney+</span><span class="app-label">Disney+</span></button>
+  <button class="app" data-app="Prime Video"><span class="tile neutral-tile" aria-hidden="true">Prime Video</span><span class="app-label">Prime Video</span></button>
+  <button class="app" data-app="Apple TV"><span class="tile neutral-tile" aria-hidden="true">Apple TV</span><span class="app-label">Apple TV</span></button>
+  <button class="app" data-app="Spotify"><span class="tile neutral-tile" aria-hidden="true">Spotify</span><span class="app-label">Spotify</span></button>
+ </div><div class="games-row" id="playtime-apps"><span class="games-title">Playtime</span><button class="game" data-app="Redball 4"><span class="game-art" aria-hidden="true">●</span>Redball 4</button><button class="game" data-app="Astronaut Stickman: Jetpack Training School"><span class="game-art" aria-hidden="true">✦</span><span>Astronaut Stickman<br>Jetpack Training School</span></button></div></section>
+ <footer class="footer"><span class="preview-label">Design preview</span><span>Personal photos · Simple favourites · A little more home</span><button class="quiet-action" id="footer-settings">Customise</button></footer>
+</main>
+<dialog id="settings" aria-labelledby="settings-title"><div class="dialog-head"><div class="dialog-heading"><button class="back-button" id="settings-back" aria-label="Back to settings menu" hidden>←</button><h2 id="settings-title">Settings</h2></div><button class="close" id="close-settings" aria-label="Close settings">×</button></div>
+ <nav class="settings-nav" id="settings-menu" data-settings-panel aria-label="Settings options">
+  <h3>Apps &amp; home</h3>
+  <button class="button secondary system-settings" data-open-panel="all-apps-panel">All apps<span aria-hidden="true">›</span></button>
+  <button class="button secondary system-settings" data-open-panel="favourites-panel">Manage favourites<span aria-hidden="true">›</span></button>
+  <button class="button secondary system-settings" data-open-panel="preferences-panel">BAY65 preferences<span aria-hidden="true">›</span></button>
+  <h3>TV &amp; system</h3>
+  <button class="button secondary system-settings" data-open-panel="network-panel">Network settings<span aria-hidden="true">↗</span></button>
+  <button class="button secondary system-settings" id="tv-settings">Android settings<span aria-hidden="true">↗</span></button>
+  <button class="button secondary system-settings" id="bluetooth-settings">Bluetooth &amp; remotes<span aria-hidden="true">↗</span></button>
+  <button class="button secondary system-settings" id="accessibility-settings">Accessibility settings<span aria-hidden="true">↗</span></button>
+  <button class="button secondary system-settings" id="launcher-settings">Choose launcher<span aria-hidden="true">↗</span></button>
+  <h3>About</h3>
+  <button class="button secondary system-settings" data-open-panel="about-panel">About BAY65<span aria-hidden="true">›</span></button>
+ </nav>
+ <section id="all-apps-panel" data-settings-panel hidden><p class="settings-intro">These are the eight apps included in the preview. On your TV, this list will include all installed launchable apps, including those not pinned to the home screen.</p><div class="catalog-list" id="all-apps-list"></div></section>
+ <section id="favourites-panel" data-settings-panel hidden><p class="settings-intro">Choose which apps appear in Favourites or Playtime, and use Left and Right to set their order. “All apps only” removes a tile from the home screen without uninstalling the app.</p><ul class="app-management" id="app-management"></ul><button class="button secondary" id="reset-apps">Restore original app layout</button></section>
+ <section id="network-panel" data-settings-panel hidden><p class="settings-intro">On the TV, the network icon opens the native network settings directly. The icon will reflect Wi-Fi, Ethernet, or a disconnected connection.</p><button class="button secondary system-settings" id="open-network-settings">Open TV network settings<span aria-hidden="true">↗</span></button><p class="help">This browser preview cannot read your TV’s connection or open its network settings.</p></section>
+ <section id="about-panel" data-settings-panel hidden><dl class="about-details"><dt>BAY65</dt><dd>Your home. Your city. Your screen.</dd><dd>0.2.2 · Personalised Android TV Launcher · Browser preview</dd><dt>This device</dt><dd>TV information will be available in the installed Android TV app.</dd><dt>This wallpaper</dt><dd id="wallpaper-info">BAY65’s default background</dd><dt>Bus data</dt><dd id="about-lta">Not connected</dd><dt>Privacy</dt><dd id="preview-privacy">Stops, app layout and slideshow preferences are saved in this browser. Selected photos stay local for this session and are not uploaded. With the local server, your LTA key stays only in server memory until you disconnect or stop the server. No analytics or tracking.</dd></dl><p class="data-credit">BAY65 Transit · Bus Arrival v3 data from LTA DataMall · <a href="https://datamall.lta.gov.sg/content/datamall/en/SingaporeOpenDataLicence.html" target="_blank" rel="noopener noreferrer">Singapore Open Data Licence v1.0</a>. Independent project; estimates are not guaranteed. <a href="https://datamall.lta.gov.sg/content/datamall/en/api-terms-of-service.html" target="_blank" rel="noopener noreferrer">LTA API terms</a>.</p><button class="button secondary system-settings" id="device-settings">Open TV device information<span aria-hidden="true">↗</span></button></section>
+ <section id="preferences-panel" data-settings-panel hidden>
+ <h3>BAY65 Memories</h3><p>Choose image files from your device for the background slideshow. They stay in this browser for this session. Choose how they appear below. Leave photos off to keep the calm default background.</p><label class="field" for="photos">Choose one or more images</label><input type="file" id="photos" accept="image/*" multiple><p class="help" id="photo-status" aria-live="polite">A neutral background is shown until you choose photos.</p><div class="check-row"><label><input type="checkbox" id="photo-enabled">Use photos as the background</label></div>
+ <div class="input-row"><div><label class="field" for="photo-interval">Change photo every</label><select id="photo-interval"><option value="30">30 seconds</option><option value="60" selected>1 minute</option><option value="300">5 minutes</option><option value="600">10 minutes</option></select></div><div><label class="field" for="photo-fit">Photo display</label><select id="photo-fit"><option value="cover">Fill screen</option><option value="contain">Show whole photo</option></select></div></div>
+ <p class="help">“Show whole photo” keeps the entire image visible, including portrait photos.</p><button class="button secondary" id="clear-photos">Remove selected photos</button>
+ <hr class="divider"><h3>BAY65 Transit</h3><p>Choose the stops and services on your home screen. Use Left and Right to arrange the cards from first to last. Changes are saved in this browser. Connect LTA below to replace sample timings with live arrivals.</p><ul class="selected-stops" id="selected-stops"></ul>
+ <div class="input-row"><div><label class="field" for="stop-name">Stop name</label><input id="stop-name" placeholder="Enter stop name" maxlength="70"></div><div><label class="field" for="stop-code">Stop code</label><input id="stop-code" placeholder="Five-digit code" inputmode="numeric" maxlength="5"></div></div>
+ <label class="field" for="services">Bus services</label><input id="services" placeholder="e.g. 10, 20" maxlength="120"><p class="help" id="direction">Separate services with commas. Availability will be checked against LTA in the TV app.</p><p class="error" id="bus-error" role="alert"></p><button class="button" id="save-stop">Save stop</button>
+ <hr class="divider"><h3>LTA connection</h3><p id="lta-local-help">Live arrivals are available when you open the local preview at http://127.0.0.1:8765. The file preview shows sample timings.</p>
+ <p class="data-credit">Use your own key and follow the <a href="https://datamall.lta.gov.sg/content/datamall/en/api-terms-of-service.html" target="_blank" rel="noopener noreferrer">LTA API terms</a>.</p><form id="lta-form" hidden><label class="field" for="lta-key">DataMall API Access Key</label><input id="lta-key" type="password" autocomplete="off" spellcheck="false" autocapitalize="none" placeholder="Enter your API key" required minlength="8" maxlength="512"><p class="help">The local server keeps the key in memory and sends it only to LTA. It is cleared when you disconnect or stop the server. It is not saved to a file or browser storage.</p><button class="button" id="lta-connect" type="submit">Connect and test</button><button class="button secondary" id="lta-disconnect" type="button" hidden>Disconnect</button></form>
+ <p class="connection-status" id="lta-status" role="status" aria-live="polite"></p></section><div class="actions"><button class="button secondary" id="done">Done</button></div>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+'use strict';
+const $=s=>document.querySelector(s), defaults=[];
+let stops=defaults.map(x=>({...x,services:[...x.services]})), photos=[], photoIndex=0, toastTimer;
+const localToken=$('meta[name="family-tv-local"]')?.content;
+let liveMode=false,liveConnected=false,pollBusy=false,connectionEpoch=0;
+const liveData=new Map(),arrivalErrors=new Map();
+const appCatalog=[...document.querySelectorAll('main [data-app]')].map((button,index)=>({id:'app-'+index,name:button.dataset.app,template:button.cloneNode(true),game:button.classList.contains('game')}));
+const defaultAppLayout=appCatalog.map(app=>({id:app.id,section:app.game?'playtime':'favourites'}));
+let appLayout=defaultAppLayout.map(app=>({...app})),photoNames=[],photoTimer,settingsPanel='settings-menu';
+let photoOptions={enabled:false,seconds:60,fit:'cover'};
+try{const saved=JSON.parse(localStorage.getItem('nook-app-layout'));if(Array.isArray(saved)&&saved.length===appCatalog.length&&new Set(saved.map(a=>a.id)).size===appCatalog.length&&saved.every(a=>appCatalog.some(c=>c.id===a.id)&&['favourites','playtime','hidden'].includes(a.section)))appLayout=saved;}catch{}
+try{const saved=JSON.parse(localStorage.getItem('nook-photo-options'));if(saved&&typeof saved.enabled==='boolean'&&[30,60,300,600].includes(saved.seconds)&&['cover','contain'].includes(saved.fit))photoOptions=saved;}catch{}
+try{localStorage.removeItem('family-tv-stops');}catch{}
+try{const saved=JSON.parse(localStorage.getItem('nook-bus-stops'));if(Array.isArray(saved)&&saved.length<=4&&saved.every(s=>s&&typeof s.name==='string'&&s.name.trim()&&/^\d{5}$/.test(s.code)&&Array.isArray(s.services)&&s.services.length>0&&s.services.length<=8&&s.services.every(n=>/^\d{1,3}[A-Za-z]?$/.test(n))))stops=saved;}catch{}
+const known={};
+function el(tag,text,className){const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(className)node.className=className;return node;}
+function notify(message){clearTimeout(toastTimer);$('#toast').textContent=message;toastTimer=setTimeout(()=>$('#toast').textContent='',4500);}
+function savePreference(key,value){try{localStorage.setItem(key,JSON.stringify(value));}catch{notify('This browser could not save settings. Changes will last for this session.')}}
+function launchPreview(name){notify(name+' will open on the TV. This browser preview cannot launch TV apps.');}
+function makeAppButton(entry){
+ const app=appCatalog.find(a=>a.id===entry.id),button=el('button',undefined,entry.section==='favourites'?'app':'game');button.dataset.app=app.name;button.setAttribute('aria-label',app.name);
+ const art=app.template.querySelector('.tile, .game-art').cloneNode(true);
+ if(app.game&&entry.section==='favourites'){art.classList.remove('game-art');art.classList.add('tile','game-tile');if(app.name.startsWith('Astronaut'))art.classList.add('space-tile');}
+ if(!app.game&&entry.section==='playtime')art.classList.add('mini-tile');
+ button.append(art,el('span',app.name,entry.section==='favourites'?'app-label':'home-app-name'));button.onclick=()=>launchPreview(app.name);return button;
+}
+function renderApps(){
+ const favourites=$('#favourites-apps'),playtime=$('#playtime-apps');favourites.replaceChildren();playtime.replaceChildren(el('span','Playtime','games-title'));
+ appLayout.filter(a=>a.section==='favourites').forEach(a=>favourites.append(makeAppButton(a)));
+ appLayout.filter(a=>a.section==='playtime').forEach(a=>playtime.append(makeAppButton(a)));
+ if(!favourites.children.length){const empty=el('p','Choose your favourite apps in Settings.','app-shelf-empty');empty.style.gridColumn='1 / -1';favourites.append(empty);}
+ playtime.hidden=!appLayout.some(a=>a.section==='playtime');
+ if(typeof getComputedStyle==='function')document.querySelectorAll('main [data-app]').forEach(button=>{const art=button.querySelector('.tile, .game-art');if(!art)return;const rgb=getComputedStyle(art).backgroundColor.match(/[\d.]+/g)?.map(Number);if(!rgb||rgb.length<3)return;const alpha=rgb[3]??1,light=(.2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2])/255*alpha>.68;button.style.setProperty('--focus-ring',light?'#16543b':'#d8f3a5');button.style.setProperty('--focus-halo',light?'#e6f2dd':'#102218');});
+}
+function renderAppSettings(){
+ $('#app-management').replaceChildren();$('#all-apps-list').replaceChildren();
+ appCatalog.forEach(app=>{const button=el('button',app.name);button.onclick=()=>launchPreview(app.name);$('#all-apps-list').append(button);});
+ for(const section of ['favourites','playtime','hidden']){
+  const entries=appLayout.filter(a=>a.section===section);
+  entries.forEach((entry,index)=>{
+   const app=appCatalog.find(a=>a.id===entry.id),row=el('li'),name=el('span',app.name,'app-name'),controls=el('div',undefined,'app-management-controls'),select=el('select');select.id='app-location-'+app.id;select.setAttribute('aria-label','Home screen placement for '+app.name);
+   for(const [value,label] of [['favourites','Favourites'],['playtime','Playtime'],['hidden','All apps only']]){const option=el('option',label);option.value=value;option.selected=value===entry.section;select.append(option);}
+   select.onchange=()=>{entry.section=select.value;savePreference('nook-app-layout',appLayout);renderApps();renderAppSettings();$('#app-location-'+app.id).focus();};
+   const left=el('button','← Left','reorder'),right=el('button','Right →','reorder');left.id='app-left-'+app.id;right.id='app-right-'+app.id;left.disabled=section==='hidden'||index===0;right.disabled=section==='hidden'||index===entries.length-1;left.setAttribute('aria-label','Move '+app.name+' left');right.setAttribute('aria-label','Move '+app.name+' right');left.onclick=()=>moveApp(app.id,-1);right.onclick=()=>moveApp(app.id,1);controls.append(select,left,right);row.append(name,controls);$('#app-management').append(row);
+  });
+ }
+}
+function moveApp(id,offset){
+ const entry=appLayout.find(a=>a.id===id);if(!entry||entry.section==='hidden')return;
+ const peers=appLayout.filter(a=>a.section===entry.section),position=peers.findIndex(a=>a.id===id),target=peers[position+offset];if(!target)return;
+ const from=appLayout.indexOf(entry),to=appLayout.indexOf(target);[appLayout[from],appLayout[to]]=[appLayout[to],appLayout[from]];savePreference('nook-app-layout',appLayout);renderApps();renderAppSettings();
+ const preferred=$('#app-'+(offset<0?'left':'right')+'-'+id),fallback=$('#app-'+(offset<0?'right':'left')+'-'+id);(preferred.disabled?fallback:preferred).focus();
+}
+$('#reset-apps').onclick=()=>{appLayout=defaultAppLayout.map(a=>({...a}));savePreference('nook-app-layout',appLayout);renderApps();renderAppSettings();notify('Original app layout restored');};
+function updateAbout(){
+ $('#wallpaper-info').textContent=photos.length&&photoOptions.enabled?'Imported photo · '+(photoNames[photoIndex]||'Photo '+(photoIndex+1))+' · '+(photoIndex+1)+' of '+photos.length:'BAY65’s default background';
+ $('#about-lta').textContent=liveConnected?(arrivalErrors.size?'Connected to LTA · Updates delayed':'Connected to LTA · Live arrivals'):liveMode?'Connection needs attention':'Not connected · Sample timings';
+}
+const settingsTitles={'settings-menu':'Settings','all-apps-panel':'All apps','favourites-panel':'Manage favourites','preferences-panel':'BAY65 preferences','network-panel':'Network settings','about-panel':'About BAY65'};
+function showSettingsPanel(id){
+ settingsPanel=settingsTitles[id]?id:'settings-menu';document.querySelectorAll('[data-settings-panel]').forEach(panel=>panel.hidden=panel.id!==settingsPanel);$('#settings-title').textContent=settingsTitles[settingsPanel];$('#settings-back').hidden=settingsPanel==='settings-menu';$('#settings').scrollTop=0;
+ if(settingsPanel==='about-panel')updateAbout();
+ if($('#settings').open){if(settingsPanel==='settings-menu')$('#settings-menu').querySelector('button')?.focus();else $('#settings-back').focus();}
+}
+// Match the native Rules.occupancy mapping; only LTA Load values set capacity.
+// Keep the capacity legend in About; home arrivals use color with accessible labels.
+$('#about-panel').append($('.capacity-legend'));
+function occupancy(load){
+ switch(load){
+  case 'SEA':return {label:'Seats',state:'seats'};
+  case 'SDA':return {label:'Standing',state:'standing'};
+  case 'LSD':return {label:'Limited',state:'limited'};
+  default:return {label:'',state:'unknown'};
+ }
+}
+function arrivalCell(label,bus){
+ const cell=el('td',label,'arrival'),capacity=occupancy(label==='—'?null:bus?.Load);
+ if(capacity.label){cell.classList.add('occupancy-'+capacity.state);cell.setAttribute('aria-label',label+', '+capacity.label);const description=el('span',capacity.label,'occupancy occupancy-'+capacity.state);description.setAttribute('aria-hidden','true');cell.append(description);}
+ return cell;
+}
+function arrivalLabel(bus){
+ const at=Date.parse(bus?.EstimatedArrival),remaining=at-Date.now();
+ if(!Number.isFinite(at)||remaining < -60000)return '—';
+ const minutes=Math.floor(remaining/60000),label=minutes<=0?'Arriving':minutes+' min';
+ return (Number(bus.Monitored)===0?'~':'')+label;
+}
+function render(busOnly=false){
+ const focusId=document.activeElement?.id,scrollPositions=new Map([...document.querySelectorAll('.bus-scroll')].map(n=>[n.id,n.scrollTop]));
+ $('#bus-container').replaceChildren();if(!busOnly)$('#selected-stops').replaceChildren();
+ stops.forEach((stop,index)=>{
+  const card=el('section',undefined,'bus'),header=el('div',undefined,'bus-head'),title=el('div');
+  const heading=el('h2',stop.name);heading.title=stop.name;
+  const meta=el('div',undefined,'stop-meta'),direction=known[stop.code]?.direction||'Custom stop';meta.append(el('span',stop.code),el('span',direction));meta.title=stop.code+' · '+direction;title.append(heading,meta);
+  const edit=el('button','Edit','quiet-action');edit.id='bus-edit-'+stop.code;edit.setAttribute('aria-label','Edit '+stop.name+' bus stop');edit.onclick=()=>{openSettings('preferences-panel');fillStop(stop)};header.append(title,edit);card.append(header);
+  const table=el('table'),thead=el('thead'),tr=el('tr');table.setAttribute('aria-label',stop.name+(liveMode?' arrivals':' sample arrivals'));['Bus','Next','Then','Later'].forEach(t=>{const th=el('th',t);th.scope='col';tr.append(th)});thead.append(tr);table.append(thead);
+  const data=liveData.get(stop.code),fresh=data&&Date.now()-Date.parse(data.updatedAt)<=60000;
+  const services=new Map((data?.services||[]).map(s=>[s.ServiceNo,s]));let scheduled=false;
+  const body=el('tbody');stop.services.forEach((n,i)=>{const row=el('tr'),service=services.get(n);const arrivals=liveMode?[fresh?arrivalLabel(service?.NextBus):'—',fresh?arrivalLabel(service?.NextBus2):'—',fresh?arrivalLabel(service?.NextBus3):'—']:[i%2?'Arriving':'4 min',i%2?'9 min':'12 min',i%2?'18 min':'23 min'];if(arrivals.some(v=>v.startsWith('~')))scheduled=true;row.append(el('td',n));arrivals.forEach((label,j)=>row.append(arrivalCell(label,liveMode&&fresh?service?.[j===0?'NextBus':j===1?'NextBus2':'NextBus3']:null)));body.append(row)});table.append(body);
+  let status='Sample timings · LTA not connected';
+  if(liveMode){const updated=data?new Intl.DateTimeFormat('en-SG',{timeZone:'Asia/Singapore',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date(data.updatedAt)):null;status=arrivalErrors.has(stop.code)?(fresh?'Update failed · Last updated '+updated:'Arrivals unavailable · Retrying'):data?(fresh?'LTA · Updated '+updated:'Outdated · Last updated '+updated):'Loading arrivals…';status+=' · — no estimate';if(scheduled)status+=' · ~ scheduled';}
+  const scroll=el('div',undefined,'bus-scroll');scroll.id='bus-services-'+stop.code;scroll.tabIndex=0;scroll.setAttribute('role','region');scroll.setAttribute('aria-label','Bus services; scroll for more');scroll.append(table);card.append(scroll,el('small',status));$('#bus-container').append(card);scroll.scrollTop=scrollPositions.get(scroll.id)||0;
+  if(busOnly)return;
+  const item=el('li'),desc=el('div',(index+1)+'. '+stop.name+' · '+stop.code);desc.append(el('small','Services '+stop.services.join(', ')));
+  const actions=el('div',undefined,'stop-actions'),left=el('button','← Left','reorder'),right=el('button','Right →','reorder'),editButton=el('button','Edit','quiet-action'),remove=el('button','Remove','remove');
+  left.id='move-left-'+stop.code;right.id='move-right-'+stop.code;editButton.id='edit-stop-'+stop.code;
+  left.setAttribute('aria-label','Move '+stop.name+' left');right.setAttribute('aria-label','Move '+stop.name+' right');left.disabled=index===0;right.disabled=index===stops.length-1;
+  left.onclick=()=>moveStop(stop.code,-1);right.onclick=()=>moveStop(stop.code,1);
+  editButton.setAttribute('aria-label','Edit '+stop.name);editButton.onclick=()=>fillStop(stop);remove.setAttribute('aria-label','Remove '+stop.name);remove.onclick=()=>{stops=stops.filter(s=>s.code!==stop.code);persist();render();$('#save-stop').focus()};actions.append(left,right,editButton,remove);item.append(desc,actions);$('#selected-stops').append(item);
+ });if(!stops.length&&!busOnly)$('#selected-stops').append(el('li','No bus stops yet. Add one below.','empty'));
+ if(!stops.length){const empty=el('div',undefined,'bus-empty'),button=el('button','Add a bus stop','button secondary');button.onclick=()=>openSettings('preferences-panel');empty.append(el('p','Your bus arrivals will appear here.'),button);$('#bus-container').append(empty);}
+ if(focusId?.startsWith('bus-'))$('#'+focusId)?.focus({preventScroll:true});
+}
+function persist(){try{localStorage.setItem('nook-bus-stops',JSON.stringify(stops));}catch{notify('This browser could not save settings. They will last for this session.')}}
+function moveStop(code,offset){
+ const from=stops.findIndex(s=>s.code===code),to=from+offset;
+ if(from<0||to<0||to>=stops.length)return;
+ const moved=stops[from];[stops[from],stops[to]]=[stops[to],stops[from]];persist();render();
+ const preferred=$('#move-'+(offset<0?'left':'right')+'-'+code),fallback=$('#move-'+(offset<0?'right':'left')+'-'+code);
+ (preferred&&!preferred.disabled?preferred:fallback&&!fallback.disabled?fallback:$('#edit-stop-'+code)).focus();
+ notify(moved.name+' moved to position '+(to+1)+' of '+stops.length);
+}
+function fillStop(s){$('#stop-name').value=s.name;$('#stop-code').value=s.code;$('#services').value=s.services.join(', ');$('#direction').textContent=known[s.code]?.direction||'Custom stop · Availability will be checked in the TV app.';$('#bus-error').textContent='';}
+function openSettings(panel='settings-menu'){showSettingsPanel(panel);if(!$('#settings').open)$('#settings').showModal();}
+$('#settings-button').onclick=()=>openSettings();$('#footer-settings').onclick=()=>openSettings();$('#network-button').onclick=()=>openSettings('network-panel');$('#settings-back').onclick=()=>showSettingsPanel('settings-menu');
+for(const selector of ['#close-settings','#done'])$(selector).onclick=()=>$('#settings').close();
+document.querySelectorAll('[data-open-panel]').forEach(button=>button.onclick=()=>showSettingsPanel(button.dataset.openPanel));
+$('#settings').addEventListener('cancel',event=>{if(settingsPanel!=='settings-menu'){event.preventDefault();showSettingsPanel('settings-menu');}});
+for(const [selector,label] of [['#tv-settings','Android settings'],['#open-network-settings','Network settings'],['#bluetooth-settings','Bluetooth and remotes'],['#accessibility-settings','Accessibility settings'],['#launcher-settings','Launcher selection'],['#device-settings','Device information']])$(selector).onclick=()=>notify(label+' will open on the TV. This browser preview cannot open TV settings.');
+$('#save-stop').onclick=()=>{const name=$('#stop-name').value.trim(),code=$('#stop-code').value.trim(),services=[...new Set($('#services').value.split(',').map(v=>v.trim().toUpperCase()).filter(Boolean))];let error='';if(!name||!/^\d{5}$/.test(code))error='Enter a stop name and a five-digit stop code.';else if(!services.length||services.length>8||services.some(n=>!/^\d{1,3}[A-Z]?$/.test(n)))error='Enter up to eight services, separated by commas (for example 10, 20).';else if(stops.length>=4&&!stops.some(s=>s.code===code))error='The preview supports up to four stops. Remove one before adding another.';$('#bus-error').textContent=error;if(error)return;const entry={name,code,services},i=stops.findIndex(s=>s.code===code);if(i<0)stops.push(entry);else stops[i]=entry;persist();render();notify('Bus settings saved');};
+function updateClock(){const now=new Date();$('#time').textContent=new Intl.DateTimeFormat('en-SG',{timeZone:'Asia/Singapore',hour:'numeric',minute:'2-digit',hour12:true}).format(now);$('#date').textContent=new Intl.DateTimeFormat('en-SG',{timeZone:'Asia/Singapore',weekday:'long',day:'numeric',month:'long'}).format(now);}updateClock();setInterval(updateClock,1000);
+function savePhotoOptions(){savePreference('nook-photo-options',photoOptions);}
+function clearPhotos(){photos.forEach(URL.revokeObjectURL);photos=[];photoNames=[];photoIndex=0;photoOptions.enabled=false;$('#photo-enabled').checked=false;savePhotoOptions();$('#backdrop').style.backgroundImage='';$('#photos').value='';$('#photo-status').textContent='A neutral background is shown until you choose photos.';updateAbout();}
+$('#photos').onchange=()=>{const chosen=[...$('#photos').files].filter(f=>f.type.startsWith('image/'));if(!chosen.length){$('#photo-status').textContent='Choose an image file to set your background.';return}photos.forEach(URL.revokeObjectURL);photos=chosen.map(f=>URL.createObjectURL(f));photoNames=chosen.map(f=>f.name);photoIndex=0;photoOptions.enabled=true;$('#photo-enabled').checked=true;savePhotoOptions();showPhoto();restartSlideshow();$('#photo-status').textContent=photos.length+' photo'+(photos.length===1?'':'s')+' selected. Add them again after reopening the preview.';};
+function showPhoto(){const backdrop=$('#backdrop');backdrop.style.backgroundRepeat='no-repeat';backdrop.style.backgroundSize=photoOptions.fit;backdrop.style.backgroundImage=photos.length&&photoOptions.enabled?'url("'+photos[photoIndex]+'")':'';updateAbout();}
+function restartSlideshow(){clearInterval(photoTimer);photoTimer=setInterval(()=>{if(photos.length>1&&photoOptions.enabled){photoIndex=(photoIndex+1)%photos.length;showPhoto();}},photoOptions.seconds*1000);}
+$('#photo-enabled').checked=photoOptions.enabled;$('#photo-interval').value=String(photoOptions.seconds);$('#photo-fit').value=photoOptions.fit;
+$('#photo-enabled').onchange=()=>{photoOptions.enabled=$('#photo-enabled').checked;savePhotoOptions();showPhoto();if(photoOptions.enabled&&!photos.length)$('#photo-status').textContent='Choose image files above to use a photo background.';};
+$('#photo-interval').onchange=()=>{photoOptions.seconds=Number($('#photo-interval').value);savePhotoOptions();restartSlideshow();};
+$('#photo-fit').onchange=()=>{photoOptions.fit=$('#photo-fit').value;savePhotoOptions();showPhoto();};$('#clear-photos').onclick=clearPhotos;restartSlideshow();
+// Spatial navigation for the home screen. Form controls retain their normal arrow keys.
+document.addEventListener('keydown',event=>{if($('#settings').open||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;if(document.activeElement.matches('select')||(document.activeElement.matches('.bus-scroll')&&['ArrowUp','ArrowDown'].includes(event.key)))return;const buttons=[...document.querySelectorAll('main button, main select, main [tabindex="0"]')].filter(b=>!b.hidden&&b.getClientRects().length);const current=document.activeElement;if(!buttons.includes(current)){buttons.find(b=>b.dataset.app)?.focus();event.preventDefault();return}const r=current.getBoundingClientRect(),cx=r.x+r.width/2,cy=r.y+r.height/2;let candidate=null,best=Infinity;for(const b of buttons){if(b===current)continue;const q=b.getBoundingClientRect(),dx=q.x+q.width/2-cx,dy=q.y+q.height/2-cy;const horizontal=event.key==='ArrowLeft'||event.key==='ArrowRight';const forward=event.key==='ArrowLeft'?-dx:event.key==='ArrowRight'?dx:event.key==='ArrowUp'?-dy:dy;if(forward<5)continue;const sideways=horizontal?Math.abs(dy):Math.abs(dx),score=forward+sideways*3;if(score<best){candidate=b;best=score}}if(candidate)candidate.focus();event.preventDefault();});
+async function api(path,body){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+ try{const response=await fetch(path,{method:body===undefined?'GET':'POST',headers:{'X-Launcher-Token':localToken,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),signal:controller.signal,cache:'no-store'});const data=await response.json();if(!response.ok)throw Object.assign(new Error(data.error||'The connection could not be completed.'),{status:response.status});return data;}
+ catch(error){if(error.status)throw error;throw new Error('Cannot reach the local server. Make sure it is running, then reload this page.');}
+ finally{clearTimeout(timer);}
+}
+function setConnectionBusy(busy){$('#lta-connect').disabled=busy;$('#lta-disconnect').disabled=busy;$('#lta-key').disabled=busy;}
+async function refreshArrivals(){
+ if(!localToken||!liveConnected||pollBusy||document.hidden)return;
+ pollBusy=true;const epoch=connectionEpoch;
+ try{await Promise.allSettled(stops.map(async stop=>{try{const result=await api('/api/arrivals?stop='+encodeURIComponent(stop.code));if(epoch!==connectionEpoch)return;liveData.set(stop.code,result);arrivalErrors.delete(stop.code);}catch(error){if(epoch!==connectionEpoch)return;arrivalErrors.set(stop.code,error.message);if([401,409].includes(error.status))liveConnected=false;}}));
+  if(epoch!==connectionEpoch)return;
+  $('#lta-status').textContent=arrivalErrors.size?[...arrivalErrors.values()][0]:'Connected to LTA. Arrivals refresh every 20 seconds while this page is visible.';render(true);
+ }finally{if(epoch===connectionEpoch)pollBusy=false;}
+}
+$('#lta-form').onsubmit=async event=>{
+ event.preventDefault();if(!localToken)return;if(!stops.length){$('#lta-status').textContent='Add a bus stop in BAY65 preferences before connecting to LTA.';return;}
+ setConnectionBusy(true);$('#lta-status').textContent='Testing your key with LTA…';
+ try{const result=await api('/api/connect',{key:$('#lta-key').value.trim(),stopCode:stops[0].code});connectionEpoch++;pollBusy=false;liveMode=true;liveConnected=true;liveData.clear();arrivalErrors.clear();liveData.set(result.arrival.stopCode,result.arrival);$('#lta-disconnect').hidden=false;$('#lta-connect').textContent='Replace key';$('#lta-status').textContent='Connected to LTA. Loading your configured stops…';render(true);await refreshArrivals();notify('Connected to LTA');}
+ catch(error){$('#lta-status').textContent=error.message;}
+ finally{$('#lta-key').value='';setConnectionBusy(false);}
+};
+$('#lta-disconnect').onclick=async()=>{
+ setConnectionBusy(true);
+ try{await api('/api/disconnect',{});connectionEpoch++;pollBusy=false;liveConnected=false;liveMode=false;liveData.clear();arrivalErrors.clear();$('#lta-key').value='';$('#lta-disconnect').hidden=true;$('#lta-connect').textContent='Connect and test';$('#lta-status').textContent='Disconnected. The key has been cleared; sample timings are shown.';render(true);}
+ catch(error){$('#lta-status').textContent=error.message;}
+ finally{setConnectionBusy(false);}
+};
+async function initialiseLta(){
+ if(!localToken)return;
+ $('#lta-form').hidden=false;$('#lta-local-help').textContent='Connect to LTA for live bus arrivals. Enter your DataMall API Access Key below.';
+ try{const status=await api('/api/status');liveConnected=status.connected;liveMode=status.connected;$('#lta-disconnect').hidden=!liveConnected;if(liveConnected){$('#lta-connect').textContent='Replace key';render(true);await refreshArrivals();}else $('#lta-status').textContent='Not connected. Sample timings are shown.';}
+ catch(error){$('#lta-status').textContent=error.message;}
+}
+setInterval(()=>{if(liveMode)render(true);void refreshArrivals();},20000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(liveMode)render(true);void refreshArrivals();}});
+renderApps();
+renderAppSettings();
+render();
+void initialiseLta();
+</script>
+</html>

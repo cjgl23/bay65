@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+.env
+.env.*
+*.log
+*.har
+node_modules/
+
+# Native build outputs and machine-specific files
+.gradle/
+**/build/
+local.properties
+*.keystore
+*.jks
+
+# macOS metadata
+.DS_Store
+
+# Local release packaging outputs
+dist/
+dist-signed/

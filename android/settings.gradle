@@ -1,0 +1,50 @@
+pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories { google(); mavenCentral() }
+}
+rootProject.name = 'Nook'
+include ':app'
+
+
+// Build tooling (AGP, lint and test tooling) brings transitive libraries.
+// Apply the security floors to BOTH buildscript and project configurations,
+// before resolution, so ordinary builds and CI audit resolve the same graph.
+// Keep Netty on its existing 4.1 line and Bouncy Castle modules aligned.
+// Revisit these overrides when the Android Gradle plugin is upgraded.
+def secureDependencies = { cfg ->
+    cfg.resolutionStrategy.eachDependency { details ->
+        def dep = details.requested
+        def minimum = null
+        if (dep.group == 'io.netty' && dep.version?.startsWith('4.1.')) {
+            minimum = '4.1.140.Final'
+        } else if (dep.group == 'com.google.guava' && dep.name == 'guava') {
+            minimum = dep.version?.endsWith('-android') ? '33.7.2-android' : '33.7.2-jre'
+        } else if (dep.group == 'org.bouncycastle' && dep.name.endsWith('-jdk18on')) {
+            minimum = '1.86'
+        } else if (dep.group == 'org.bitbucket.b_c' && dep.name == 'jose4j') {
+            minimum = '0.9.6'
+        } else if (dep.group == 'org.jdom' && dep.name == 'jdom2') {
+            minimum = '2.0.6.1'
+        }
+        // Do not downgrade a newer version chosen by a future upstream upgrade.
+        if (minimum && dep.version) {
+            def parts = { String v -> (v =~ /\d+/).collect { it.toInteger() } }
+            def actual = parts(dep.version)
+            def floor = parts(minimum)
+            int size = Math.max(actual.size(), floor.size())
+            int comparison = 0
+            for (int i = 0; i < size && comparison == 0; i++) {
+                comparison = (i < actual.size() ? actual[i] : 0) <=> (i < floor.size() ? floor[i] : 0)
+            }
+            if (comparison < 0) {
+                details.useVersion(minimum)
+                details.because('Remediate high/critical transitive dependency advisories')
+            }
+        }
+    }
+}
+gradle.beforeProject { p ->
+    p.buildscript.configurations.configureEach(secureDependencies)
+    p.configurations.configureEach(secureDependencies)
+}

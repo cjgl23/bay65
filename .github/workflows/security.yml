@@ -1,0 +1,98 @@
+# Scan every change to the repository before it merges, including policy-only PRs.
+name: Security
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security:
+    uses: cjgl23/github-workflows/.github/workflows/security.yml@b25f7e44fd55ce5efd4c57175557e00789d64070
+
+  dependencies:
+    name: Resolved dependency vulnerability scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Scan full reachable Git history and root archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          curl --fail --silent --show-error --location 'https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz' --output "$tmp/gitleaks.tar.gz"
+          echo '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tar.gz' | (cd "$tmp" && sha256sum --strict --check -)
+          tar -xzf "$tmp/gitleaks.tar.gz" -C "$tmp" gitleaks
+          "$tmp/gitleaks" git --log-opts='--all' --redact=100 --no-banner .
+          for root in $(git rev-list --max-parents=0 --all); do
+            mkdir "$tmp/root-$root"
+            git archive "$root" | tar -xf - -C "$tmp/root-$root"
+            "$tmp/gitleaks" dir --max-archive-depth=2 --redact=100 --no-banner "$tmp/root-$root"
+          done
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+      - name: Resolve npm test dependencies into a lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/nook-node"
+          cd "$RUNNER_TEMP/nook-node"
+          printf '%s\n' '{"name":"nook-preview-audit","version":"0.1.0","private":true,"devDependencies":{"linkedom":"0.18.12"}}' > package.json
+          npm install --package-lock-only --ignore-scripts --no-audit
+          npm audit --audit-level=high
+      - name: Resolve Android dependencies into Gradle lockfiles
+        shell: bash
+        working-directory: android
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          cat > "$RUNNER_TEMP/nook-audit.init.gradle" <<'GRADLE'
+          gradle.beforeProject { p ->
+              p.buildscript.configurations.configureEach { cfg ->
+                  if (cfg.name == 'classpath') {
+                      cfg.resolutionStrategy.activateDependencyLocking()
+                  }
+              }
+              p.dependencyLocking { lockAllConfigurations() }
+          }
+          GRADLE
+          ./gradlew --no-daemon --init-script "$RUNNER_TEMP/nook-audit.init.gradle" :buildEnvironment :app:buildEnvironment :app:dependencies --write-locks
+          find . -name '*gradle.lockfile' -print
+          test -n "$(find . -name '*gradle.lockfile' -print -quit)"
+          grep -r --include='*gradle.lockfile' -q 'junit:junit:4.13.2' .
+      - name: Install checksum-verified baseline Trivy
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            'https://raw.githubusercontent.com/cjgl23/github-workflows/b25f7e44fd55ce5efd4c57175557e00789d64070/scripts/install_trivy.sh' \
+            --output "$RUNNER_TEMP/install_trivy.sh"
+          chmod +x "$RUNNER_TEMP/install_trivy.sh"
+          "$RUNNER_TEMP/install_trivy.sh" "$RUNNER_TEMP/trivy-bin"
+      - name: Scan resolved dependencies including development dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          trivy fs --scanners vuln --include-dev-deps --severity HIGH,CRITICAL --exit-code 1 android
+          trivy fs --scanners vuln --include-dev-deps --severity HIGH,CRITICAL --exit-code 1 "$RUNNER_TEMP/nook-node"

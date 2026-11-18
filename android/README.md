@@ -30,7 +30,7 @@ Operating-hour validation is not included in this version. Service suggestions s
 
 A floating voice orb in the bottom-right corner of the home screen, ported from the Rupert AI presence orb. It is off until you set it up in Settings → BAY65 Assistant.
 
-- **Talk:** select the orb and press OK, or press the remote's search button. **Type:** hold OK on the orb. Press OK again or Back to stop.
+- **Talk:** select the orb and press OK, or (once the assistant is set up) press the remote's search button. Until then, the search button keeps its normal system behaviour. **Type:** hold OK on the orb. Press OK again or Back to stop.
 - **Colour shows state:** calm blue when idle, teal while listening, amber while thinking or speaking. The orb pulses with your voice and with each spoken word, and stays still when the TV's animations are turned off.
 - **Voice is free and on the TV:** listening uses Android's speech recogniser and replies use the TV's built-in text-to-speech. No voice API key is needed. If in-app listening is unavailable, BAY65 falls back to the system voice screen, then to typing. Microphone permission is requested only the first time you talk.
 - **Answers come from a free provider you choose.** Gemini uses its own API (which allows web search); the others use the OpenAI-compatible format:
@@ -44,10 +44,11 @@ A floating voice orb in the bottom-right corner of the home screen, ported from 
 
 - **Web search (Gemini only):** with **Search the web with Google for current answers** on (the default), Gemini can use Grounding with Google Search for anything current: new releases, top 10 lists, trending songs or shows, news, sports and prices. Up to three source sites appear under the answer on screen; they are not read aloud. Searched answers count against Gemini's free-tier search allowance. Groq, OpenRouter and custom servers answer without web search.
 - **Favourite apps:** the assistant knows the names of your Favourites and Playtime apps (when sharing is on), so questions like "What's trending in OPM?" with Spotify, or "Any new comedies?" with Netflix, are answered for those apps using web search. Android does not let BAY65 read other apps' data, such as playlists or watch history.
+- **When something fails:** if a searched question hits a rate limit or web search is unavailable, the assistant retries once without search and says so under the answer. **Save and test** uses the same web-search setting as real questions. Server errors such as "The model is overloaded" show as temporary and never ask you to change a setting.
 - Keys are tested before saving, encrypted with Android Keystore, masked on entry and protected against screenshots, like the LTA key. Free tiers have rate limits and some providers may use free-tier prompts to improve their models.
-- With **Include my bus stops, live arrivals and favourite app names** on (the default), each question includes your stop names and codes, the current arrival estimates and your favourite app names, so you can ask "When is my next 10?". Turn it off to send only your question and the time. The assistant is told never to invent arrival times.
+- With **Include my bus stops, live arrivals, and favourite app and game names** on (the default), each question includes your stop names and codes, the current arrival estimates and your favourite app names, so you can ask "When is my next 10?". Turn it off to send only your question and the time. The assistant is told never to invent arrival times.
 - BAY65 does not send unencrypted traffic, so Ollama on your home network needs an HTTPS front end such as Tailscale Serve or a reverse proxy.
-- Conversation history (last six exchanges) is kept in memory only. **Turn off and remove saved key** clears the provider settings and key.
+- Conversation history (last six exchanges) is kept in memory only, and is cleared when you save new assistant settings or turn the assistant off. **Turn off and remove saved key** clears the provider settings and key.
 
 ## Photos
 

@@ -172,8 +172,8 @@ public class MainActivity extends Activity {
         if(assistant!=null)assistant.release();main.removeCallbacksAndMessages(null);io.shutdownNow();if(settingsDialog!=null)settingsDialog.dismiss();super.onDestroy();
     }
     @Override public boolean onKeyDown(int keyCode,KeyEvent event){
-        // The remote's search key talks to the assistant; the Assistant button stays with the system.
-        if(keyCode==KeyEvent.KEYCODE_SEARCH&&assistant!=null&&(settingsDialog==null||!settingsDialog.isShowing())){if(event.getRepeatCount()==0)assistant.activate();return true;}
+        // Once the assistant is set up, the remote's search key talks to it; otherwise search stays with the system.
+        if(keyCode==KeyEvent.KEYCODE_SEARCH&&assistant!=null&&assistantReady()&&(settingsDialog==null||!settingsDialog.isShowing())){if(event.getRepeatCount()==0)assistant.activate();return true;}
         return super.onKeyDown(keyCode,event);
     }
     @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){
@@ -555,7 +555,7 @@ public class MainActivity extends Activity {
         paragraph("Licence: https://datamall.lta.gov.sg/content/datamall/en/SingaporeOpenDataLicence.html");
         page.addView(button("Singapore Open Data Licence",()->openExternal("https://datamall.lta.gov.sg/content/datamall/en/SingaporeOpenDataLicence.html")));
         page.addView(button("LTA API terms",()->openExternal("https://datamall.lta.gov.sg/content/datamall/en/api-terms-of-service.html")));
-        heading("Privacy");paragraph("Stops, photos, and the encrypted keys are stored privately on this TV. Your key and requested stop codes are sent directly to LTA over HTTPS. If you set up the BAY65 Assistant, your questions and, if you allow it, your stop names, arrivals and favourite app names are sent over HTTPS to the AI provider you chose; speech is handled by this TV's speech services. Photos are not uploaded by BAY65. No analytics, advertising, account sign-in, or cloud backup. Disconnect to remove the key, or uninstall BAY65 to remove its private data.");focusPage();
+        heading("Privacy");paragraph("Stops, photos, and the encrypted keys are stored privately on this TV. Your key and requested stop codes are sent directly to LTA over HTTPS. If you set up the BAY65 Assistant, your questions and, unless you turn it off in Assistant settings, your stop names, arrivals and favourite app and game names are sent over HTTPS to the AI provider you chose; speech is handled by this TV's speech services. Photos are not uploaded by BAY65. No analytics, advertising, account sign-in, or cloud backup. Disconnect to remove the key, or uninstall BAY65 to remove its private data.");focusPage();
     }
 
     private Agent.Provider assistantProvider(){String id=store.preferences.getString("agent_provider",null);return id==null?null:Agent.provider(id);}
@@ -575,8 +575,8 @@ public class MainActivity extends Activity {
         FrameLayout.LayoutParams params=new FrameLayout.LayoutParams(-2,-2,Gravity.BOTTOM|Gravity.END);params.rightMargin=dp(14);params.bottomMargin=dp(8);root.addView(dock,params);
         assistant=new Assistant(this,new Assistant.Host(){
             @Override public boolean configured(){return assistantReady();}
-            @Override public Agent.Call call(List<Agent.Turn> history,String question){
-                Agent.Provider provider=assistantProvider();boolean search=assistantSearch(provider);
+            @Override public Agent.Call call(List<Agent.Turn> history,String question,boolean allowSearch){
+                Agent.Provider provider=assistantProvider();boolean search=allowSearch&&assistantSearch(provider);
                 String system=Agent.systemPrompt(clock(System.currentTimeMillis(),"EEEE d MMMM yyyy, h:mm a"),assistantContext(),search);
                 return Agent.call(provider,store.preferences.getString("agent_base",""),store.preferences.getString("agent_model",provider.defaultModel),agentKey,system,history,question,search);
             }
@@ -635,32 +635,38 @@ public class MainActivity extends Activity {
             CheckBox search=new CheckBox(this);search.setText("Search the web with Google for current answers, such as new releases, charts and trending songs on your favourite apps");search.setTextColor(INK);search.setTextSize(14);search.setChecked(store.preferences.getBoolean("agent_search",true));search.setPadding(0,dp(7),0,dp(7));
             search.setOnCheckedChangeListener((b,checked)->store.preferences.edit().putBoolean("agent_search",checked).apply());page.addView(search);
         }
-        CheckBox share=new CheckBox(this);share.setText("Include my bus stops, live arrivals and favourite app names in questions");share.setTextColor(INK);share.setTextSize(14);share.setChecked(store.preferences.getBoolean("agent_share",true));share.setPadding(0,dp(7),0,dp(7));
+        CheckBox share=new CheckBox(this);share.setText("Include my bus stops, live arrivals, and favourite app and game names in questions");share.setTextColor(INK);share.setTextSize(14);share.setChecked(store.preferences.getBoolean("agent_share",true));share.setPadding(0,dp(7),0,dp(7));
         share.setOnCheckedChangeListener((b,checked)->store.preferences.edit().putBoolean("agent_share",checked).apply());page.addView(share);
         TextView status=text("",13,MUTED);status.setPadding(0,dp(8),0,dp(12));page.addView(status);
         TextView save=button("Save and test",()->{});page.addView(save);
         save.setOnClickListener(v->{
-            final String endpoint,modelName,candidate=key.getText().toString().trim();key.setText("");
-            try{modelName=Agent.model(model.getText().toString());endpoint=Agent.endpoint(provider,base==null?"":base.getText().toString(),modelName);}
+            // Capture every field on the main thread so the saved settings are exactly the ones tested.
+            final String modelName,baseText=base==null?"":base.getText().toString().trim(),candidate=key.getText().toString().trim();key.setText("");
+            try{modelName=Agent.model(model.getText().toString());Agent.endpoint(provider,baseText,modelName);}
             catch(IllegalArgumentException invalid){status.setText(invalid.getMessage());return;}
             final String useKey=candidate.isEmpty()&&keepKey?agentKey:candidate;
-            if(!Agent.validKey(useKey,provider.keyRequired)){status.setText("Enter a valid API key from "+provider.keyPage+".");return;}
-            save.setEnabled(false);status.setText("Testing "+provider.label+"…");
+            if(!Agent.validKey(useKey,provider.keyRequired)){status.setText(provider.keyPage==null?"Enter a valid API key, or leave it blank.":"Enter a valid API key from "+provider.keyPage+".");return;}
+            // Test the way questions are really asked, including web search when it is on.
+            final boolean testSearch=assistantSearch(provider);
+            save.setEnabled(false);status.setText("Testing "+provider.label+(testSearch?" with web search…":"…"));
             io.execute(()->{
                 try{
-                    agentClient.ask(Agent.call(provider,base==null?"":base.getText().toString(),modelName,useKey,"Reply with the single word OK.",new ArrayList<>(),"Connection test",false));
+                    agentClient.ask(Agent.call(provider,baseText,modelName,useKey,"Reply with the single word OK.",new ArrayList<>(),"Connection test",testSearch));
                     if(useKey.isEmpty())agentSecrets.clear();else agentSecrets.save(useKey);
                     main.post(()->{
-                        store.preferences.edit().putString("agent_provider",provider.id).putString("agent_model",modelName).putString("agent_base",base==null?"":base.getText().toString().trim()).apply();
-                        agentKey=useKey.isEmpty()?null:useKey;if(assistant!=null){assistant.stop();assistant.refresh();}
+                        store.preferences.edit().putString("agent_provider",provider.id).putString("agent_model",modelName).putString("agent_base",baseText).apply();
+                        agentKey=useKey.isEmpty()?null:useKey;if(assistant!=null){assistant.reset();assistant.refresh();}
                         save.setEnabled(true);status.setText("Connected. Close Settings, select the orb and press OK to talk.");message("BAY65 Assistant is on");
                     });
                 }
-                catch(AgentClient.Failure failure){main.post(()->{save.setEnabled(true);status.setText(failure.getMessage());});}
+                catch(AgentClient.Failure failure){
+                    String hint=testSearch&&Agent.retryWithoutSearch(failure.status,failure.body)?" Web search may not work with this model or key: turn it off above, or choose another model.":"";
+                    main.post(()->{save.setEnabled(true);status.setText(failure.getMessage()+hint);});
+                }
                 catch(Exception unavailable){main.post(()->{save.setEnabled(true);status.setText("The key could not be securely saved. Please try again.");});}
             });
         });
-        if(saved!=null)page.addView(button("Turn off and remove saved key",()->{agentSecrets.clear();agentKey=null;store.preferences.edit().remove("agent_provider").remove("agent_model").remove("agent_base").apply();if(assistant!=null){assistant.dismiss();assistant.refresh();}message("BAY65 Assistant turned off");showAssistantSettings();}));
+        if(saved!=null)page.addView(button("Turn off and remove saved key",()->{agentSecrets.clear();agentKey=null;store.preferences.edit().remove("agent_provider").remove("agent_model").remove("agent_base").apply();if(assistant!=null){assistant.reset();assistant.refresh();}message("BAY65 Assistant turned off");showAssistantSettings();}));
         focusPage();
     }
 }

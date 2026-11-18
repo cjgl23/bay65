@@ -36,7 +36,7 @@ final class Assistant {
     /** What the activity supplies: setup state, and each question's request with BAY65 context. */
     interface Host {
         boolean configured();
-        Agent.Call call(List<Agent.Turn> history, String question);
+        Agent.Call call(List<Agent.Turn> history, String question, boolean allowSearch);
         void openSettings();
     }
 
@@ -73,6 +73,9 @@ final class Assistant {
     }
 
     void dismiss() { stop(); bubble.setVisibility(View.GONE); }
+
+    /** Forget the conversation, so earlier questions never go to a new provider or after Turn off. */
+    void reset() { dismiss(); history.clear(); }
 
     void stop() {
         generation++;
@@ -168,27 +171,47 @@ final class Assistant {
     }
 
     private void ask(String text) {
+        // A late voice result can arrive after the assistant was turned off; ignore it.
+        if (!host.configured()) { stop(); return; }
         final int ask = ++generation;
-        final Agent.Call call;
-        try { call = host.call(new ArrayList<>(history), text); }
-        catch (IllegalArgumentException invalid) { fail(invalid.getMessage()); return; }
+        final Agent.Call call, plain;
+        try {
+            List<Agent.Turn> past = new ArrayList<>(history);
+            call = host.call(past, text, true);
+            plain = call.searched ? host.call(past, text, false) : null;
+        } catch (RuntimeException invalid) {
+            fail(invalid instanceof IllegalArgumentException ? invalid.getMessage() : "The assistant settings could not be read. Open Assistant settings and save again.");
+            return;
+        }
         show(text, "…");
         setState("THINKING");
         io.execute(() -> {
             Agent.Reply reply = null;
             String error = null;
+            boolean unsearched = false;
             try { reply = client.ask(call); }
-            catch (AgentClient.Failure failure) { error = failure.getMessage(); }
+            catch (AgentClient.Failure failure) {
+                error = failure.getMessage();
+                if (plain != null && Agent.retryWithoutSearch(failure.status, failure.body)) {
+                    try { reply = client.ask(plain); unsearched = true; }
+                    catch (AgentClient.Failure again) { error = again.getMessage(); }
+                    catch (RuntimeException unexpected) { error = "The assistant hit an unexpected problem. Try again."; }
+                }
+            }
+            catch (RuntimeException unexpected) { error = "The assistant hit an unexpected problem. Try again."; }
             final Agent.Reply result = reply;
             final String problem = error;
+            final boolean withoutSearch = unsearched;
             main.post(() -> {
                 if (ask != generation || activity.isDestroyed()) return;
                 if (result == null) { fail(problem); return; }
                 history.add(new Agent.Turn("user", text));
                 history.add(new Agent.Turn("assistant", result.text));
                 while (history.size() > 12) history.remove(0);
-                // Sources are shown on screen only; the voice reads just the answer.
-                show(text, result.sources.isEmpty() ? result.text : result.text + "\n\nSources: " + String.join(" · ", result.sources));
+                // Sources and notes are shown on screen only; the voice reads just the answer.
+                String note = withoutSearch ? "\n\nWeb search was unavailable, so this answer may be out of date."
+                        : result.sources.isEmpty() ? "" : "\n\nSources: " + String.join(" · ", result.sources);
+                show(text, result.text + note);
                 speak(result.text, ask);
             });
         });

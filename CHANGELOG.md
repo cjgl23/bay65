@@ -9,6 +9,7 @@ This records released source versions and significant changes. It does not imply
 - Request microphone permission only on first use; fall back to the system voice screen or typing.
 - Use Gemini's native API with optional Grounding with Google Search, so the assistant can answer current questions (new releases, charts, trending songs) about your favourite apps; show up to three sources under searched answers. Default Gemini model is now `gemini-3.5-flash-lite`.
 - Share Playtime app names alongside favourites, and tell the assistant to relate entertainment questions to those apps.
+- Assistant fixes from code review: the remote's search key only opens the assistant once it is set up; server errors (such as 503 "The model is overloaded") no longer blame the model or key; daily limits are told apart from per-minute limits; searched questions retry once without web search on a rate limit or grounding error; Save and test uses the real web-search setting and saves exactly the tested values; conversation history is cleared on settings changes and Turn off; a late voice result after Turn off can no longer crash the launcher; privacy wording now says sharing is on unless turned off and names games.
 - Show the provider's reason for rejected assistant requests, and report Gemini's HTTP 400 invalid-key response as a key problem rather than a model problem.
 
 ## 0.2.2 — 15 November 2026

@@ -11,7 +11,11 @@ import javax.net.ssl.HttpsURLConnection;
 /** One HTTPS request per question to the user's chosen provider. The key is never logged. */
 final class AgentClient {
     static final class Failure extends Exception {
-        Failure(String message) { super(message); }
+        /** HTTP status and raw error body, or 0 and null when no response arrived. */
+        final int status;
+        final String body;
+        Failure(String message) { this(message, 0, null); }
+        Failure(String message, int status, String body) { super(message); this.status = status; this.body = body; }
     }
 
     /** At most 64 KB of the error body, read only to show the provider's reason. */
@@ -45,7 +49,7 @@ final class AgentClient {
             connection.setFixedLengthStreamingMode(payload.length);
             try (OutputStream output = connection.getOutputStream()) { output.write(payload); }
             int code = connection.getResponseCode();
-            if (code != 200) throw new Failure(Agent.failure(code, errorBody(connection)));
+            if (code != 200) { String error = errorBody(connection); throw new Failure(Agent.failure(code, error), code, error); }
             try (InputStream input = connection.getInputStream(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
                 byte[] buffer = new byte[8192];
                 int count, total = 0;

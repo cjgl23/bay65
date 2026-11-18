@@ -83,8 +83,10 @@ public final class Agent {
     /** A finished request: where it goes, how the key is sent, and the JSON body. */
     public static final class Call {
         public final String endpoint, key, body;
-        public final boolean gemini;
-        Call(String endpoint, String key, String body, boolean gemini) { this.endpoint = endpoint; this.key = key; this.body = body; this.gemini = gemini; }
+        public final boolean gemini, searched;
+        Call(String endpoint, String key, String body, boolean gemini, boolean searched) {
+            this.endpoint = endpoint; this.key = key; this.body = body; this.gemini = gemini; this.searched = searched;
+        }
     }
 
     /** An answer plus, for searched answers, the web sources shown under it (never spoken). */
@@ -96,8 +98,9 @@ public final class Agent {
 
     public static Call call(Provider provider, String customBase, String model, String key, String system, List<Turn> history, String question, boolean search) {
         String name = model(model);
-        String body = provider == Provider.GEMINI ? geminiBody(system, history, question, search) : requestBody(name, system, history, question);
-        return new Call(endpoint(provider, customBase, name), key, body, provider == Provider.GEMINI);
+        boolean searched = search && canSearch(provider);
+        String body = provider == Provider.GEMINI ? geminiBody(system, history, question, searched) : requestBody(name, system, history, question);
+        return new Call(endpoint(provider, customBase, name), key, body, provider == Provider.GEMINI, searched);
     }
 
     public static String systemPrompt(String now, String context) { return systemPrompt(now, context, false); }
@@ -201,18 +204,33 @@ public final class Agent {
     public static String failure(int status) { return failure(status, null); }
 
     /**
-     * Maps a provider error to an actionable message. Gemini reports a bad key as HTTP 400,
-     * so the provider's own message decides between key and model problems before the status does.
+     * Maps a provider error to an actionable message. Gemini reports a bad key as HTTP 400, so for
+     * client errors the provider's own message decides between key and model problems. Server errors
+     * (such as Gemini's 503 "The model is overloaded") are always temporary and never blame a setting.
      */
     public static String failure(int status, String body) {
         String reason = providerMessage(body), lower = reason.toLowerCase(Locale.ROOT);
-        if (status == 401 || status == 403 || lower.contains("api key") || lower.contains("api_key"))
+        boolean client = status == 400 || status == 404;
+        if (status >= 500 || status <= 0) return "The assistant is temporarily unavailable. Try again shortly.";
+        if (status == 401 || status == 403 || client && (lower.contains("api key") || lower.contains("api_key")))
             return "The provider rejected the API key. Check it in Assistant settings." + detail(reason);
-        if (status == 429) return "The free-tier limit was reached. Wait a minute and try again." + detail(reason);
-        if (status == 404 || lower.contains("model"))
+        if (status == 429) return (dailyLimit(lower)
+                ? "Today's free limit was reached. Try again tomorrow, or turn off web search in Assistant settings."
+                : "The free-tier limit was reached. Wait a minute and try again.") + detail(reason);
+        if (status == 404 || status == 400 && lower.contains("model"))
             return "The provider rejected the model. Check the model name in Assistant settings." + detail(reason);
         if (status == 400) return "The provider rejected the request." + detail(reason);
         return "The assistant is temporarily unavailable. Try again shortly.";
+    }
+
+    private static boolean dailyLimit(String lower) {
+        return lower.contains("per day") || lower.contains("perday") || lower.contains("daily");
+    }
+
+    /** A searched question that hit a rate limit or a grounding error is worth one retry without search. */
+    public static boolean retryWithoutSearch(int status, String body) {
+        String lower = providerMessage(body).toLowerCase(Locale.ROOT);
+        return status == 429 || status == 400 && (lower.contains("search") || lower.contains("grounding"));
     }
 
     /** error.message from an OpenAI-style body, including Gemini's array-wrapped form; "" if absent. */

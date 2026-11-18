@@ -117,6 +117,33 @@ public class AgentTest {
         StringBuilder longReason=new StringBuilder();for(int i=0;i<50;i++)longReason.append("word ");
         assertTrue(Agent.failure(429,"{\"error\":{\"message\":\""+longReason+"\"}}").length()<240);
     }
+    @Test public void serverErrorsNeverBlameTheModelOrKey(){
+        // Gemini's real overload reply: a 503 whose message mentions "model".
+        String overloaded="{\"error\":{\"code\":503,\"message\":\"The model is overloaded. Please try again later.\",\"status\":\"UNAVAILABLE\"}}";
+        assertEquals("The assistant is temporarily unavailable. Try again shortly.",Agent.failure(503,overloaded));
+        assertEquals("The assistant is temporarily unavailable. Try again shortly.",Agent.failure(500,"{\"error\":{\"message\":\"invalid api key cache\"}}"));
+        assertEquals("The assistant is temporarily unavailable. Try again shortly.",Agent.failure(0,null));
+        // Client errors still use the provider's reason.
+        assertTrue(Agent.failure(400,"{\"error\":{\"message\":\"models/x is not found\"}}").contains("model name"));
+        assertTrue(Agent.failure(403,null).contains("API key"));
+        assertFalse(Agent.failure(429,"{\"error\":{\"message\":\"model quota\"}}").contains("model name"));
+    }
+    @Test public void dailyQuotaIsDistinguishedFromPerMinuteLimits(){
+        assertTrue(Agent.failure(429,"{\"error\":{\"message\":\"Quota exceeded for metric: requests per day\"}}").contains("Try again tomorrow"));
+        assertTrue(Agent.failure(429,"{\"error\":{\"message\":\"Rate limit: requests per minute\"}}").contains("Wait a minute"));
+    }
+    @Test public void searchedQuestionsRetryWithoutSearchOnlyForLimitsAndGroundingErrors(){
+        assertTrue(Agent.retryWithoutSearch(429,null));
+        assertTrue(Agent.retryWithoutSearch(400,"{\"error\":{\"message\":\"Search Grounding is not supported.\"}}"));
+        assertTrue(Agent.retryWithoutSearch(400,"[{\"error\":{\"message\":\"google_search grounding unavailable\"}}]"));
+        assertFalse(Agent.retryWithoutSearch(400,"{\"error\":{\"message\":\"API key not valid\"}}"));
+        assertFalse(Agent.retryWithoutSearch(503,null));
+        assertFalse(Agent.retryWithoutSearch(401,null));
+        Agent.Call searched=Agent.call(Agent.Provider.GEMINI,null,"gemini-3.5-flash-lite","AIzaKey12345","S",Arrays.<Agent.Turn>asList(),"q",true);
+        assertTrue(searched.searched);
+        assertFalse(Agent.call(Agent.Provider.GEMINI,null,"gemini-3.5-flash-lite","AIzaKey12345","S",Arrays.<Agent.Turn>asList(),"q",false).searched);
+        assertFalse("Only Gemini can search",Agent.call(Agent.Provider.GROQ,null,"m","gsk_key1234","S",Arrays.<Agent.Turn>asList(),"q",true).searched);
+    }
     @Test public void spokenFormDropsMarkdownAndLinks(){
         assertEquals("Bus 10 is in 3 min. See LTA.",Agent.spokenForm("**Bus 10** is in 3 min. See [LTA](https://lta.gov.sg). ```code```"));
     }

@@ -6,7 +6,6 @@ import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -46,11 +45,12 @@ final class Assistant {
     private final Host host;
     /** Its own thread, so a slow or abandoned answer never delays bus arrivals or photos. */
     private final ExecutorService io = Executors.newSingleThreadExecutor();
-    /** Remembers when this TV's in-app recogniser could not hear, so later presses go straight to the system voice screen. */
-    private static final String SYSTEM_VOICE = "agent_system_voice";
-    private final SharedPreferences preferences;
+    /**
+     * Earlier builds remembered "use the system voice screen" after a failed press, which could stick on a TV
+     * whose in-app voice works. Fallback is now per press only; this obsolete setting is cleared on start.
+     */
+    private static final String OBSOLETE_SYSTEM_VOICE = "agent_system_voice";
     private boolean heardSound;
-    private int silentStreak;
     private final OrbView orb;
     private final LinearLayout bubble;
     private final TextView status, question, answer;
@@ -66,7 +66,7 @@ final class Assistant {
 
     Assistant(Activity activity, Host host, OrbView orb, LinearLayout bubble, TextView status, TextView question, TextView answer) {
         this.activity = activity; this.host = host; this.orb = orb;
-        this.preferences = activity.getSharedPreferences("nook", Context.MODE_PRIVATE);
+        activity.getSharedPreferences("nook", Context.MODE_PRIVATE).edit().remove(OBSOLETE_SYSTEM_VOICE).apply();
         this.bubble = bubble; this.status = status; this.question = question; this.answer = answer;
         orb.setOnClickListener(v -> activate());
         orb.setOnLongClickListener(v -> { typeQuestion(); return true; });
@@ -85,7 +85,7 @@ final class Assistant {
     void dismiss() { stop(); bubble.setVisibility(View.GONE); }
 
     /** Forget the conversation, so earlier questions never go to a new provider or after Turn off. */
-    void reset() { dismiss(); history.clear(); preferences.edit().remove(SYSTEM_VOICE).apply(); }
+    void reset() { dismiss(); history.clear(); }
 
     void stop() {
         generation++;
@@ -104,7 +104,6 @@ final class Assistant {
     }
 
     private void listen() {
-        if (preferences.getBoolean(SYSTEM_VOICE, false)) { listenWithSystem(); return; }
         if (SpeechRecognizer.isRecognitionAvailable(activity)) {
             if (activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) { listenInApp(); return; }
             activity.requestPermissions(new String[] {Manifest.permission.RECORD_AUDIO}, PERMISSION_REQUEST);
@@ -123,7 +122,7 @@ final class Assistant {
                 .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 .putExtra(RecognizerIntent.EXTRA_PROMPT, "Ask BAY65");
         try { activity.startActivityForResult(intent, VOICE_REQUEST); }
-        catch (ActivityNotFoundException | SecurityException unavailable) { preferences.edit().remove(SYSTEM_VOICE).apply(); typeQuestion(); }
+        catch (ActivityNotFoundException | SecurityException unavailable) { typeQuestion(); }
     }
 
     void onVoiceResult(int result, Intent data) {
@@ -145,16 +144,17 @@ final class Assistant {
                     // A recogniser that reported a client or server fault is rebuilt for the next press.
                     if (VoiceRules.recreateRecognizer(error)) main.post(Assistant.this::dropRecognizer);
                     switch (VoiceRules.afterError(error, heardSound)) {
-                        case SYSTEM_VOICE:
-                            silentStreak = heardSound ? 0 : silentStreak + 1;
-                            if (VoiceRules.rememberSystemVoice(error, heardSound, silentStreak)) preferences.edit().putBoolean(SYSTEM_VOICE, true).apply();
-                            setState("IDLE"); listenWithSystem(); break;
-                        case RETRY_MESSAGE: silentStreak = 0; setState("IDLE"); show("", "I didn't catch that. Press OK on the orb to try again."); break;
+                        // This press only: the next press tries in-app listening again.
+                        case SYSTEM_VOICE: setState("IDLE"); listenWithSystem(); break;
+                        case RETRY_MESSAGE:
+                            setState("IDLE");
+                            show("", heardSound ? "I didn't catch that. Press OK on the orb to try again."
+                                    : "I didn't hear anything. Press OK on the orb to try again, or hold OK to type.");
+                            break;
                         default: fail("Voice input is unavailable. Hold OK on the orb to type instead.");
                     }
                 }
                 @Override public void onResults(Bundle results) {
-                    silentStreak = 0;
                     ArrayList<String> heard = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                     if (heard != null && !heard.isEmpty() && !heard.get(0).trim().isEmpty()) ask(heard.get(0).trim());
                     else { setState("IDLE"); show("", "I didn't catch that. Press OK on the orb to try again."); }

@@ -17,20 +17,12 @@ public class VoiceRulesTest {
         assertEquals(Next.UNAVAILABLE,afterError(ERROR_NETWORK,false));
         assertEquals(Next.UNAVAILABLE,afterError(ERROR_NETWORK_TIMEOUT,true));
     }
-    @Test public void silenceMeansTheMicNeverReachedTheRecogniser(){
-        assertEquals(Next.SYSTEM_VOICE,afterError(ERROR_SPEECH_TIMEOUT,false));
-        assertEquals(Next.SYSTEM_VOICE,afterError(ERROR_NO_MATCH,false));
+    @Test public void silenceNeverOpensTheSystemScreenUnasked(){
+        // Nobody spoke, or the mic picked nothing up: say so and let the user press OK again.
+        assertEquals(Next.RETRY_MESSAGE,afterError(ERROR_SPEECH_TIMEOUT,false));
+        assertEquals(Next.RETRY_MESSAGE,afterError(ERROR_NO_MATCH,false));
         assertEquals(Next.RETRY_MESSAGE,afterError(ERROR_SPEECH_TIMEOUT,true));
         assertEquals(Next.RETRY_MESSAGE,afterError(ERROR_NO_MATCH,true));
-    }
-    @Test public void onlyPersistentMicProblemsAreRemembered(){
-        assertTrue(rememberSystemVoice(ERROR_AUDIO,false,0));
-        assertTrue(rememberSystemVoice(ERROR_INSUFFICIENT_PERMISSIONS,true,0));
-        assertFalse("one silent press is not enough",rememberSystemVoice(ERROR_SPEECH_TIMEOUT,false,1));
-        assertTrue(rememberSystemVoice(ERROR_SPEECH_TIMEOUT,false,2));
-        assertFalse(rememberSystemVoice(ERROR_NO_MATCH,true,5));
-        assertFalse("busy is transient",rememberSystemVoice(ERROR_RECOGNIZER_BUSY,false,9));
-        assertFalse(rememberSystemVoice(ERROR_CLIENT,false,9));
     }
     @Test public void faultedRecognisersAreRebuilt(){
         assertTrue(recreateRecognizer(ERROR_CLIENT));assertTrue(recreateRecognizer(ERROR_SERVER_DISCONNECTED));assertTrue(recreateRecognizer(ERROR_RECOGNIZER_BUSY));

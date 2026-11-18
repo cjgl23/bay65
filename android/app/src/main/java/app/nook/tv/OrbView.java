@@ -114,7 +114,7 @@ final class OrbView extends View {
 
     @Override protected void onDraw(Canvas canvas) {
         long now = SystemClock.uptimeMillis();
-        float dt = Math.min(.05f, (now - last) / 1000f); last = now;
+        float dt = Math.min(.1f, (now - last) / 1000f); last = now;
         float t = reduceMotion ? 0 : (now - epoch) / 1000f;
         float motion = reduceMotion ? 0 : 1, pulse = reduceMotion ? .45f : 1;
         int[] p = current.palette;
@@ -189,7 +189,10 @@ final class OrbView extends View {
         paint.setShader(null);
 
         if (isFocused()) ring(canvas, cx, cy, size * .47f, 2 * density, 0xffffff, .9f);
-        if (isShown() && !(reduceMotion && mode == Mode.QUIET && level < .01f)) postInvalidateOnAnimation();
+        if (isShown() && !(reduceMotion && mode == Mode.QUIET && level < .01f)) {
+            long delay = VoiceRules.orbFrameDelay(mode == Mode.QUIET, isFocused(), level);
+            if (delay == 0) postInvalidateOnAnimation(); else postInvalidateDelayed(delay);
+        }
     }
 
     @Override protected void onFocusChanged(boolean focused, int direction, android.graphics.Rect previous) {

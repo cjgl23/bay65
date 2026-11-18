@@ -144,6 +144,28 @@ public class AgentTest {
         assertFalse(Agent.call(Agent.Provider.GEMINI,null,"gemini-3.5-flash-lite","AIzaKey12345","S",Arrays.<Agent.Turn>asList(),"q",false).searched);
         assertFalse("Only Gemini can search",Agent.call(Agent.Provider.GROQ,null,"m","gsk_key1234","S",Arrays.<Agent.Turn>asList(),"q",true).searched);
     }
+    @Test public void geminiGetsRoomToThinkAndKeepsItsDefaultTemperature() throws Exception{
+        JSONObject config=new JSONObject(Agent.geminiBody("S",Arrays.<Agent.Turn>asList(),"q",true)).getJSONObject("generationConfig");
+        assertEquals(1024,config.getInt("maxOutputTokens"));
+        assertFalse(config.has("temperature"));
+        assertFalse("thinkingConfig differs between Gemini generations",config.has("thinkingConfig"));
+    }
+    @Test public void cutOffAnswersAreMarkedAndEmptyOnesExplained(){
+        Agent.Reply cut=Agent.reply("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"The top song is\"}]},\"finishReason\":\"MAX_TOKENS\"}]}",true);
+        assertEquals("The top song is…",cut.text);
+        try{Agent.reply("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"x\",\"thought\":true}]},\"finishReason\":\"MAX_TOKENS\"}]}",true);fail();}
+        catch(IllegalArgumentException e){assertTrue(e.getMessage().contains("ran out of room"));}
+        assertEquals("Done.",Agent.reply("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Done.\"}]},\"finishReason\":\"STOP\"}]}",true).text);
+    }
+    @Test public void savedKeysAreNeverSentToADifferentCustomServer(){
+        Agent.Provider c=Agent.Provider.CUSTOM;
+        assertTrue(Agent.reuseSavedKey(c,c,"https://ollama.home.ts.net/v1","https://ollama.home.ts.net/v1/"));
+        assertTrue(Agent.reuseSavedKey(c,c,"https://Ollama.home.ts.net/v1"," https://ollama.home.ts.net/v1 "));
+        assertFalse(Agent.reuseSavedKey(c,c,"https://ollama.home.ts.net/v1","https://other.example.com/v1"));
+        assertTrue(Agent.reuseSavedKey(Agent.Provider.GEMINI,Agent.Provider.GEMINI,"","anything"));
+        assertFalse(Agent.reuseSavedKey(Agent.Provider.GROQ,Agent.Provider.GEMINI,"",""));
+        assertFalse(Agent.reuseSavedKey(c,null,"",""));
+    }
     @Test public void spokenFormDropsMarkdownAndLinks(){
         assertEquals("Bus 10 is in 3 min. See LTA.",Agent.spokenForm("**Bus 10** is in 3 min. See [LTA](https://lta.gov.sg). ```code```"));
     }

@@ -581,7 +581,7 @@ public class MainActivity extends Activity {
                 return Agent.call(provider,store.preferences.getString("agent_base",""),store.preferences.getString("agent_model",provider.defaultModel),agentKey,system,history,question,search);
             }
             @Override public void openSettings(){showAssistantSettings();}
-        },io,orb,bubble,status,question,answer);
+        },orb,bubble,status,question,answer);
     }
     /** Only what the user agreed to share: stop names, codes, live arrivals and favourite app names. */
     private String assistantContext(){
@@ -629,7 +629,7 @@ public class MainActivity extends Activity {
         EditText base=provider==Agent.Provider.CUSTOM?field("Server address",store.preferences.getString("agent_base",""),InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_URI):null;
         EditText model=field("Model",provider==saved?store.preferences.getString("agent_model",provider.defaultModel):provider.defaultModel,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         boolean keepKey=provider==saved&&agentKey!=null;
-        EditText key=field(keepKey?"New API key (leave blank to keep the saved key)":provider.keyRequired?"API key":"API key (optional)","",InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        EditText key=field(keepKey?(provider==Agent.Provider.CUSTOM?"New API key (leave blank to keep the saved key for the same server address)":"New API key (leave blank to keep the saved key)"):provider.keyRequired?"API key":"API key (optional)","",InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         key.setAutofillHints((String[])null);key.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS);
         if(Agent.canSearch(provider)){
             CheckBox search=new CheckBox(this);search.setText("Search the web with Google for current answers, such as new releases, charts and trending songs on your favourite apps");search.setTextColor(INK);search.setTextSize(14);search.setChecked(store.preferences.getBoolean("agent_search",true));search.setPadding(0,dp(7),0,dp(7));
@@ -644,7 +644,8 @@ public class MainActivity extends Activity {
             final String modelName,baseText=base==null?"":base.getText().toString().trim(),candidate=key.getText().toString().trim();key.setText("");
             try{modelName=Agent.model(model.getText().toString());Agent.endpoint(provider,baseText,modelName);}
             catch(IllegalArgumentException invalid){status.setText(invalid.getMessage());return;}
-            final String useKey=candidate.isEmpty()&&keepKey?agentKey:candidate;
+            // A saved key is only reused for the same server; a changed custom address needs the key typed again.
+            final String useKey=candidate.isEmpty()&&keepKey&&Agent.reuseSavedKey(provider,saved,store.preferences.getString("agent_base",""),baseText)?agentKey:candidate;
             if(!Agent.validKey(useKey,provider.keyRequired)){status.setText(provider.keyPage==null?"Enter a valid API key, or leave it blank.":"Enter a valid API key from "+provider.keyPage+".");return;}
             // Test the way questions are really asked, including web search when it is on.
             final boolean testSearch=assistantSearch(provider);

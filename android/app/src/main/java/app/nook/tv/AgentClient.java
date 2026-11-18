@@ -30,11 +30,24 @@ final class AgentClient {
         } catch (IOException unavailable) { return null; }
     }
 
+    /** The request in flight, so stop() can abort it instead of letting it run to its timeout. */
+    private volatile HttpsURLConnection active;
+    /** No answer may take longer than this end to end, even from a server that sends data very slowly. */
+    static final long DEADLINE_MS = 60_000;
+
+    /** Aborts the request in flight, if any; its ask() then fails and the caller ignores the result. */
+    void cancel() {
+        HttpsURLConnection connection = active;
+        if (connection != null) { try { connection.disconnect(); } catch (RuntimeException ignored) {} }
+    }
+
     Agent.Reply ask(Agent.Call call) throws Failure {
         String endpoint = call.endpoint, key = call.key, body = call.body;
         HttpsURLConnection connection = null;
+        long started = System.currentTimeMillis();
         try {
             connection = (HttpsURLConnection) new URL(endpoint).openConnection();
+            active = connection;
             connection.setInstanceFollowRedirects(false);
             connection.setConnectTimeout(10000);
             connection.setReadTimeout(45000);
@@ -56,6 +69,7 @@ final class AgentClient {
                 while ((count = input.read(buffer)) != -1) {
                     total += count;
                     if (total > 1_000_000) throw new IOException("Response too large");
+                    if (System.currentTimeMillis() - started > DEADLINE_MS) throw new IOException("Answer took too long");
                     output.write(buffer, 0, count);
                 }
                 return Agent.reply(output.toString("UTF-8"), call.gemini);
@@ -65,6 +79,7 @@ final class AgentClient {
         } catch (IOException | ClassCastException e) {
             throw new Failure("Cannot reach the assistant. Check the internet connection and try again.");
         } finally {
+            if (active == connection) active = null;
             if (connection != null) connection.disconnect();
         }
     }

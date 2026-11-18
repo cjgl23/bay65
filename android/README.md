@@ -31,8 +31,8 @@ Operating-hour validation is not included in this version. Service suggestions s
 A floating voice orb in the bottom-right corner of the home screen, ported from the Rupert AI presence orb. It is off until you set it up in Settings → BAY65 Assistant.
 
 - **Talk:** select the orb and press OK, or (once the assistant is set up) press the remote's search button. Until then, the search button keeps its normal system behaviour. **Type:** hold OK on the orb. Press OK again or Back to stop.
-- **Colour shows state:** calm blue when idle, teal while listening, amber while thinking or speaking. The orb pulses with your voice and with each spoken word, and stays still when the TV's animations are turned off.
-- **Voice is free and on the TV:** listening uses Android's speech recogniser and replies use the TV's built-in text-to-speech. No voice API key is needed. If in-app listening is unavailable, BAY65 falls back to the system voice screen, then to typing. Microphone permission is requested only the first time you talk.
+- **Colour shows state:** calm blue when idle, teal while listening, amber while thinking or speaking. The orb pulses with your voice and with each spoken word, and stays still when the TV's animations are turned off. While idle in the corner it redraws at a reduced rate to spare low-end TV graphics.
+- **Voice is free and on the TV:** listening uses Android's speech recogniser and replies use the TV's built-in text-to-speech. No voice API key is needed. If in-app listening is unavailable or hears no sound (common when the TV's only microphone is in the remote), BAY65 switches to the system voice screen, then to typing. After two silent presses in a row, or a microphone error, it goes straight to the system voice screen; saving assistant settings again resets this. Microphone permission is requested only the first time you talk.
 - **Answers come from a free provider you choose.** Gemini uses its own API (which allows web search); the others use the OpenAI-compatible format:
 
 | Provider | Default model (editable) | Key |

@@ -4,7 +4,9 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -23,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
+import java.util.concurrent.Executors;
 
 /**
  * Voice loop for the floating orb: listen with the TV's speech recogniser, ask the chosen
@@ -42,7 +44,13 @@ final class Assistant {
 
     private final Activity activity;
     private final Host host;
-    private final ExecutorService io;
+    /** Its own thread, so a slow or abandoned answer never delays bus arrivals or photos. */
+    private final ExecutorService io = Executors.newSingleThreadExecutor();
+    /** Remembers when this TV's in-app recogniser could not hear, so later presses go straight to the system voice screen. */
+    private static final String SYSTEM_VOICE = "agent_system_voice";
+    private final SharedPreferences preferences;
+    private boolean heardSound;
+    private int silentStreak;
     private final OrbView orb;
     private final LinearLayout bubble;
     private final TextView status, question, answer;
@@ -55,8 +63,9 @@ final class Assistant {
     private String state = "IDLE";
     private int generation;
 
-    Assistant(Activity activity, Host host, ExecutorService io, OrbView orb, LinearLayout bubble, TextView status, TextView question, TextView answer) {
-        this.activity = activity; this.host = host; this.io = io; this.orb = orb;
+    Assistant(Activity activity, Host host, OrbView orb, LinearLayout bubble, TextView status, TextView question, TextView answer) {
+        this.activity = activity; this.host = host; this.orb = orb;
+        this.preferences = activity.getSharedPreferences("nook", Context.MODE_PRIVATE);
         this.bubble = bubble; this.status = status; this.question = question; this.answer = answer;
         orb.setOnClickListener(v -> activate());
         orb.setOnLongClickListener(v -> { typeQuestion(); return true; });
@@ -75,10 +84,11 @@ final class Assistant {
     void dismiss() { stop(); bubble.setVisibility(View.GONE); }
 
     /** Forget the conversation, so earlier questions never go to a new provider or after Turn off. */
-    void reset() { dismiss(); history.clear(); }
+    void reset() { dismiss(); history.clear(); preferences.edit().remove(SYSTEM_VOICE).apply(); }
 
     void stop() {
         generation++;
+        client.cancel();
         if (recognizer != null) recognizer.cancel();
         if (tts != null) tts.stop();
         orb.setLevel(0);
@@ -87,11 +97,13 @@ final class Assistant {
 
     void release() {
         stop();
+        io.shutdownNow();
         if (recognizer != null) { recognizer.destroy(); recognizer = null; }
         if (tts != null) { tts.shutdown(); tts = null; }
     }
 
     private void listen() {
+        if (preferences.getBoolean(SYSTEM_VOICE, false)) { listenWithSystem(); return; }
         if (SpeechRecognizer.isRecognitionAvailable(activity)) {
             if (activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) { listenInApp(); return; }
             activity.requestPermissions(new String[] {Manifest.permission.RECORD_AUDIO}, PERMISSION_REQUEST);
@@ -110,7 +122,7 @@ final class Assistant {
                 .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 .putExtra(RecognizerIntent.EXTRA_PROMPT, "Ask BAY65");
         try { activity.startActivityForResult(intent, VOICE_REQUEST); }
-        catch (ActivityNotFoundException | SecurityException unavailable) { typeQuestion(); }
+        catch (ActivityNotFoundException | SecurityException unavailable) { preferences.edit().remove(SYSTEM_VOICE).apply(); typeQuestion(); }
     }
 
     void onVoiceResult(int result, Intent data) {
@@ -124,16 +136,24 @@ final class Assistant {
             recognizer.setRecognitionListener(new RecognitionListener() {
                 @Override public void onReadyForSpeech(Bundle params) {}
                 @Override public void onBeginningOfSpeech() {}
-                @Override public void onRmsChanged(float db) { orb.setLevel((db + 2f) / 12f); }
+                @Override public void onRmsChanged(float db) { if (db > VoiceRules.HEARD_DB) heardSound = true; orb.setLevel((db + 2f) / 12f); }
                 @Override public void onBufferReceived(byte[] buffer) {}
                 @Override public void onEndOfSpeech() { orb.setLevel(0); }
                 @Override public void onError(int error) {
                     if (!state.equals("LISTENING")) return;
-                    if (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) { setState("IDLE"); show("", "I didn't catch that. Press OK on the orb to try again."); }
-                    else if (error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) { setState("IDLE"); listenWithSystem(); }
-                    else fail("Voice input is unavailable. Hold OK on the orb to type instead.");
+                    // A recogniser that reported a client or server fault is rebuilt for the next press.
+                    if (VoiceRules.recreateRecognizer(error)) main.post(Assistant.this::dropRecognizer);
+                    switch (VoiceRules.afterError(error, heardSound)) {
+                        case SYSTEM_VOICE:
+                            silentStreak = heardSound ? 0 : silentStreak + 1;
+                            if (VoiceRules.rememberSystemVoice(error, heardSound, silentStreak)) preferences.edit().putBoolean(SYSTEM_VOICE, true).apply();
+                            setState("IDLE"); listenWithSystem(); break;
+                        case RETRY_MESSAGE: silentStreak = 0; setState("IDLE"); show("", "I didn't catch that. Press OK on the orb to try again."); break;
+                        default: fail("Voice input is unavailable. Hold OK on the orb to type instead.");
+                    }
                 }
                 @Override public void onResults(Bundle results) {
+                    silentStreak = 0;
                     ArrayList<String> heard = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                     if (heard != null && !heard.isEmpty() && !heard.get(0).trim().isEmpty()) ask(heard.get(0).trim());
                     else { setState("IDLE"); show("", "I didn't catch that. Press OK on the orb to try again."); }
@@ -146,6 +166,7 @@ final class Assistant {
             });
         }
         generation++;
+        heardSound = false;
         if (tts != null) tts.stop();
         show("", "Listening… ask about your buses, or anything else.");
         setState("LISTENING");
@@ -153,7 +174,13 @@ final class Assistant {
                 .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         try { recognizer.startListening(intent); }
-        catch (RuntimeException unavailable) { setState("IDLE"); listenWithSystem(); }
+        catch (RuntimeException unavailable) { setState("IDLE"); dropRecognizer(); listenWithSystem(); }
+    }
+
+    private void dropRecognizer() {
+        if (recognizer == null) return;
+        try { recognizer.destroy(); } catch (RuntimeException ignored) {}
+        recognizer = null;
     }
 
     void typeQuestion() {
@@ -221,6 +248,8 @@ final class Assistant {
         if (tts == null) {
             tts = new TextToSpeech(activity, code -> main.post(() -> {
                 ttsReady = code == TextToSpeech.SUCCESS && tts != null;
+                // A failed start is retried on the next answer instead of staying silent until restart.
+                if (!ttsReady && tts != null) { tts.shutdown(); tts = null; setState("IDLE"); return; }
                 if (ttsReady) {
                     Locale singapore = Locale.forLanguageTag("en-SG");
                     if (tts.isLanguageAvailable(singapore) >= TextToSpeech.LANG_AVAILABLE) tts.setLanguage(singapore);

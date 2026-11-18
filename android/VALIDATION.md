@@ -1,5 +1,32 @@
 # BAY65 validation evidence
 
+## Voice input fix (unreleased, PR #8)
+
+**Problem.** On the owner's PrismPlus Android 10 TV, pressing the orb kept opening the TV's system voice screen (an "Ask BAY65" bar at the top) instead of listening in BAY65 (teal orb). In 0.3.0, after a microphone error, a denied microphone permission or two silent presses in a row, BAY65 saved `agent_system_voice` and sent every later press to the system screen until the assistant settings were saved again.
+
+**Fix.** The fallback to the system voice screen now applies only to the press that hit a recogniser or audio error. Nothing is remembered between presses. Silence shows "I didn't hear anything", and the obsolete setting is cleared when the assistant starts.
+
+**Automated evidence.** CI passed on PR #8: Android build, lint and unit tests, release-artifact verification, Trivy and dependency scans. The dependency scan on the `main` merge commit failed once because Maven Central and Google Maven artifacts could not be resolved. That was a transient repository-access error with no build files changed, and it passed on re-run. 45 JVM tests pass locally, including `VoiceRulesTest` (silence never opens the system screen; fallback only for recogniser and audio errors).
+
+**Physical evidence.** On 18 November 2026, after installing the fix, the owner reported that the issue appears resolved: the orb listens in BAY65 again. The regression checklist below has not yet been recorded in full.
+
+### Voice input regression checklist
+
+After each step, press the orb once more and speak. **Expected: the orb turns teal and listens in BAY65, with no "Ask BAY65" bar at the top.** Record Pass, Fail or Not applicable, with the date and build.
+
+| # | Steps | Expected | Result |
+|---|---|---|---|
+| 1 | Press the orb and say nothing; wait about 10 s. Repeat three times. | "I didn't hear anything…" each time; no system voice screen | |
+| 2 | Press the orb and ask "When is my next bus?" | Teal orb; answer shown and spoken | |
+| 3 | Turn off BAY65's microphone permission (Android settings → Apps → BAY65 → Permissions). Press the orb and deny the request. | The system voice screen opens for that press only (expected) | |
+| 4 | Turn the microphone permission on again; press the orb. | In-app listening again (0.3.0 stayed stuck here) | |
+| 5 | Press the orb, then immediately press the remote's Google Assistant button. | Either may take the microphone, and the system screen may open once; the next orb press listens in BAY65 | |
+| 6 | With Everywhere Mode on, open another app and press the Menu shortcut (or open the Ask BAY65 notification). Ask something, press Back, press Home, press the orb. | The panel and the home-screen orb both listen in BAY65 | |
+| 7 | Restart the TV; press the orb. | In-app listening | |
+| 8 | Optional, test TV only: install 0.3.0, do step 1 twice (it should stick on the system screen), then install the fixed build and press the orb. | The stuck state clears without saving settings again | |
+
+If a step fails, note the step number, whether it happened on the home screen or in the Ask BAY65 panel, and take a photo of the screen. Do not record personal values or credentials.
+
 ## Everywhere Mode (unreleased)
 
 Existing Everywhere Mode coverage includes JVM tests for overlay visibility, dimming, drift and frame rate, plus the shared context builder. The development instrumentation runner contains assertions for the non-exported panel, overlay service and restart receiver, and for the Ask BAY65 alias being disabled by default; this is distinct from the new accessibility service, which is exported under Android’s `BIND_ACCESSIBILITY_SERVICE` permission.

@@ -26,7 +26,8 @@ final class AgentClient {
         } catch (IOException unavailable) { return null; }
     }
 
-    String ask(String endpoint, String key, String body) throws Failure {
+    Agent.Reply ask(Agent.Call call) throws Failure {
+        String endpoint = call.endpoint, key = call.key, body = call.body;
         HttpsURLConnection connection = null;
         try {
             connection = (HttpsURLConnection) new URL(endpoint).openConnection();
@@ -38,7 +39,8 @@ final class AgentClient {
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/json");
             connection.setRequestProperty("Accept", "application/json");
-            if (key != null && !key.isEmpty()) connection.setRequestProperty("Authorization", "Bearer " + key);
+            // Gemini takes its key in a header too, so it never appears in a URL.
+            if (key != null && !key.isEmpty()) connection.setRequestProperty(call.gemini ? "x-goog-api-key" : "Authorization", call.gemini ? key : "Bearer " + key);
             byte[] payload = body.getBytes(StandardCharsets.UTF_8);
             connection.setFixedLengthStreamingMode(payload.length);
             try (OutputStream output = connection.getOutputStream()) { output.write(payload); }
@@ -52,7 +54,7 @@ final class AgentClient {
                     if (total > 1_000_000) throw new IOException("Response too large");
                     output.write(buffer, 0, count);
                 }
-                return Agent.answer(output.toString("UTF-8"));
+                return Agent.reply(output.toString("UTF-8"), call.gemini);
             }
         } catch (IllegalArgumentException e) {
             throw new Failure(e.getMessage());

@@ -559,6 +559,7 @@ public class MainActivity extends Activity {
     }
 
     private Agent.Provider assistantProvider(){String id=store.preferences.getString("agent_provider",null);return id==null?null:Agent.provider(id);}
+    private boolean assistantSearch(Agent.Provider provider){return Agent.canSearch(provider)&&store.preferences.getBoolean("agent_search",true);}
     private boolean assistantReady(){Agent.Provider provider=assistantProvider();return provider!=null&&(agentKey!=null||!provider.keyRequired);}
     /** The floating orb sits in the bottom-right corner; its transcript bubble opens to its left. */
     private void buildAssistant(){
@@ -574,11 +575,11 @@ public class MainActivity extends Activity {
         FrameLayout.LayoutParams params=new FrameLayout.LayoutParams(-2,-2,Gravity.BOTTOM|Gravity.END);params.rightMargin=dp(14);params.bottomMargin=dp(8);root.addView(dock,params);
         assistant=new Assistant(this,new Assistant.Host(){
             @Override public boolean configured(){return assistantReady();}
-            @Override public String endpoint(){Agent.Provider provider=assistantProvider();return Agent.endpoint(provider,store.preferences.getString("agent_base",""));}
-            @Override public String model(){return Agent.model(store.preferences.getString("agent_model",assistantProvider().defaultModel));}
-            @Override public String key(){return agentKey;}
-            @Override public String context(){return assistantContext();}
-            @Override public String now(){return clock(System.currentTimeMillis(),"EEEE d MMMM yyyy, h:mm a");}
+            @Override public Agent.Call call(List<Agent.Turn> history,String question){
+                Agent.Provider provider=assistantProvider();boolean search=assistantSearch(provider);
+                String system=Agent.systemPrompt(clock(System.currentTimeMillis(),"EEEE d MMMM yyyy, h:mm a"),assistantContext(),search);
+                return Agent.call(provider,store.preferences.getString("agent_base",""),store.preferences.getString("agent_model",provider.defaultModel),agentKey,system,history,question,search);
+            }
             @Override public void openSettings(){showAssistantSettings();}
         },io,orb,bubble,status,question,answer);
     }
@@ -608,6 +609,8 @@ public class MainActivity extends Activity {
         }
         List<String> favourites=new ArrayList<>();for(AppRepository.Entry entry:apps.section(store,"favourites"))favourites.add(entry.label);
         if(!favourites.isEmpty())context.append("Favourite apps on this TV: ").append(String.join(", ",favourites)).append(".\n");
+        List<String> games=new ArrayList<>();for(AppRepository.Entry entry:apps.section(store,"playtime"))games.add(entry.label);
+        if(!games.isEmpty())context.append("Games in Playtime: ").append(String.join(", ",games)).append(".\n");
         return context.toString().trim();
     }
     private void showAssistantSettings(){showAssistantSettings(null);}
@@ -628,20 +631,24 @@ public class MainActivity extends Activity {
         boolean keepKey=provider==saved&&agentKey!=null;
         EditText key=field(keepKey?"New API key (leave blank to keep the saved key)":provider.keyRequired?"API key":"API key (optional)","",InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         key.setAutofillHints((String[])null);key.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS);
+        if(Agent.canSearch(provider)){
+            CheckBox search=new CheckBox(this);search.setText("Search the web with Google for current answers, such as new releases, charts and trending songs on your favourite apps");search.setTextColor(INK);search.setTextSize(14);search.setChecked(store.preferences.getBoolean("agent_search",true));search.setPadding(0,dp(7),0,dp(7));
+            search.setOnCheckedChangeListener((b,checked)->store.preferences.edit().putBoolean("agent_search",checked).apply());page.addView(search);
+        }
         CheckBox share=new CheckBox(this);share.setText("Include my bus stops, live arrivals and favourite app names in questions");share.setTextColor(INK);share.setTextSize(14);share.setChecked(store.preferences.getBoolean("agent_share",true));share.setPadding(0,dp(7),0,dp(7));
         share.setOnCheckedChangeListener((b,checked)->store.preferences.edit().putBoolean("agent_share",checked).apply());page.addView(share);
         TextView status=text("",13,MUTED);status.setPadding(0,dp(8),0,dp(12));page.addView(status);
         TextView save=button("Save and test",()->{});page.addView(save);
         save.setOnClickListener(v->{
             final String endpoint,modelName,candidate=key.getText().toString().trim();key.setText("");
-            try{endpoint=Agent.endpoint(provider,base==null?"":base.getText().toString());modelName=Agent.model(model.getText().toString());}
+            try{modelName=Agent.model(model.getText().toString());endpoint=Agent.endpoint(provider,base==null?"":base.getText().toString(),modelName);}
             catch(IllegalArgumentException invalid){status.setText(invalid.getMessage());return;}
             final String useKey=candidate.isEmpty()&&keepKey?agentKey:candidate;
             if(!Agent.validKey(useKey,provider.keyRequired)){status.setText("Enter a valid API key from "+provider.keyPage+".");return;}
             save.setEnabled(false);status.setText("Testing "+provider.label+"…");
             io.execute(()->{
                 try{
-                    agentClient.ask(endpoint,useKey,Agent.requestBody(modelName,"Reply with the single word OK.",new ArrayList<>(),"Connection test"));
+                    agentClient.ask(Agent.call(provider,base==null?"":base.getText().toString(),modelName,useKey,"Reply with the single word OK.",new ArrayList<>(),"Connection test",false));
                     if(useKey.isEmpty())agentSecrets.clear();else agentSecrets.save(useKey);
                     main.post(()->{
                         store.preferences.edit().putString("agent_provider",provider.id).putString("agent_model",modelName).putString("agent_base",base==null?"":base.getText().toString().trim()).apply();

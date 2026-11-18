@@ -7,6 +7,8 @@ This records released source versions and significant changes. It does not imply
 - Add the optional BAY65 Assistant: a floating, state-coloured voice orb ported from Rupert AI, using the TV's free speech recogniser and text-to-speech, with Google Gemini, Groq, OpenRouter or an HTTPS OpenAI-compatible server (such as Ollama) for answers.
 - Encrypt the assistant key with Android Keystore; share stops, live arrivals and favourite app names only while the opt-out setting is on.
 - Request microphone permission only on first use; fall back to the system voice screen or typing.
+- Use Gemini's native API with optional Grounding with Google Search, so the assistant can answer current questions (new releases, charts, trending songs) about your favourite apps; show up to three sources under searched answers. Default Gemini model is now `gemini-3.5-flash-lite`.
+- Share Playtime app names alongside favourites, and tell the assistant to relate entertainment questions to those apps.
 - Show the provider's reason for rejected assistant requests, and report Gemini's HTTP 400 invalid-key response as a key problem rather than a model problem.
 
 ## 0.2.2 — 15 November 2026

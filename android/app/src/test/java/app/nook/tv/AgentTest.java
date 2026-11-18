@@ -8,18 +8,23 @@ import static org.junit.Assert.*;
 
 public class AgentTest {
     @Test public void everyFreePresetUsesHttpsChatCompletions(){
-        assertEquals("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",Agent.endpoint(Agent.Provider.GEMINI,null));
-        assertEquals("https://api.groq.com/openai/v1/chat/completions",Agent.endpoint(Agent.Provider.GROQ,"ignored"));
-        assertEquals("https://openrouter.ai/api/v1/chat/completions",Agent.endpoint(Agent.Provider.OPENROUTER,""));
+        assertEquals("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",Agent.endpoint(Agent.Provider.GEMINI,null,"gemini-3.5-flash-lite"));
+        assertEquals("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",Agent.endpoint(Agent.Provider.GEMINI,null,"models/gemini-3.5-flash-lite"));
+        assertEquals("gemini-3.5-flash-lite",Agent.Provider.GEMINI.defaultModel);
+        assertEquals("https://api.groq.com/openai/v1/chat/completions",Agent.endpoint(Agent.Provider.GROQ,"ignored","m"));
+        assertEquals("https://openrouter.ai/api/v1/chat/completions",Agent.endpoint(Agent.Provider.OPENROUTER,"","m"));
+        for(String bad:new String[]{"a/b","x:generateContent","../x"}){try{Agent.endpoint(Agent.Provider.GEMINI,null,bad);fail(bad);}catch(IllegalArgumentException expected){}}
+        assertTrue(Agent.canSearch(Agent.Provider.GEMINI));
+        assertFalse(Agent.canSearch(Agent.Provider.GROQ));
         assertTrue(Agent.Provider.GEMINI.keyRequired);
         assertFalse(Agent.Provider.CUSTOM.keyRequired);
         assertEquals(Agent.Provider.GEMINI,Agent.provider("unknown"));
         assertEquals(Agent.Provider.GROQ,Agent.provider("groq"));
     }
     @Test public void customServersMustBeHttpsWithoutCredentialsInTheUrl(){
-        assertEquals("https://ollama.home.ts.net/v1/chat/completions",Agent.endpoint(Agent.Provider.CUSTOM," https://ollama.home.ts.net/v1/ "));
+        assertEquals("https://ollama.home.ts.net/v1/chat/completions",Agent.endpoint(Agent.Provider.CUSTOM," https://ollama.home.ts.net/v1/ ","llama3.2"));
         for(String bad:new String[]{"","http://192.168.1.5:11434/v1","ftp://x/v1","https://user:pw@host/v1","https://host/v1?x=1","https:///v1","not a url"}){
-            try{Agent.endpoint(Agent.Provider.CUSTOM,bad);fail(bad);}catch(IllegalArgumentException expected){}
+            try{Agent.endpoint(Agent.Provider.CUSTOM,bad,"llama3.2");fail(bad);}catch(IllegalArgumentException expected){}
         }
     }
     @Test public void modelsAndKeysAreValidated(){
@@ -41,6 +46,46 @@ public class AgentTest {
         assertEquals("system",messages.getJSONObject(0).getString("role"));
         assertEquals("assistant",messages.getJSONObject(2).getString("role"));
         assertEquals("When is bus 10?",messages.getJSONObject(3).getString("content"));
+    }
+    @Test public void geminiRequestsUseNativeRolesAndOptionalGoogleSearch() throws Exception{
+        Agent.Call call=Agent.call(Agent.Provider.GEMINI,null,"gemini-3.5-flash-lite","AIzaKey12345","SYSTEM",
+                Arrays.asList(new Agent.Turn("user","hi"),new Agent.Turn("assistant","hello")),"Trending OPM songs?",true);
+        assertTrue(call.gemini);
+        assertFalse(call.endpoint.contains("AIzaKey12345"));
+        JSONObject body=new JSONObject(call.body);
+        assertEquals("SYSTEM",body.getJSONObject("systemInstruction").getJSONArray("parts").getJSONObject(0).getString("text"));
+        JSONArray contents=body.getJSONArray("contents");
+        assertEquals(3,contents.length());
+        assertEquals("model",contents.getJSONObject(1).getString("role"));
+        assertEquals("Trending OPM songs?",contents.getJSONObject(2).getJSONArray("parts").getJSONObject(0).getString("text"));
+        assertTrue(body.getJSONArray("tools").getJSONObject(0).has("google_search"));
+        assertFalse(new JSONObject(Agent.geminiBody("S",Arrays.<Agent.Turn>asList(),"q",false)).has("tools"));
+        Agent.Call groq=Agent.call(Agent.Provider.GROQ,null,"llama-3.3-70b-versatile","gsk_key1234","S",Arrays.<Agent.Turn>asList(),"q",true);
+        assertFalse(groq.gemini);
+        assertEquals("llama-3.3-70b-versatile",new JSONObject(groq.body).getString("model"));
+    }
+    @Test public void groundedGeminiAnswersCarryUpToThreeSourcesAndSkipThoughts(){
+        String body="{\"candidates\":[{\"content\":{\"role\":\"model\",\"parts\":[{\"text\":\"planning\",\"thought\":true},{\"text\":\"Top OPM tracks this week include \"},{\"text\":\"songs by SB19.\"}]},"
+                +"\"finishReason\":\"STOP\",\"groundingMetadata\":{\"webSearchQueries\":[\"trending OPM songs\"],\"groundingChunks\":["
+                +"{\"web\":{\"uri\":\"https://a\",\"title\":\"spotify.com\"}},{\"web\":{\"uri\":\"https://b\",\"title\":\"billboard.com\"}},"
+                +"{\"web\":{\"uri\":\"https://c\",\"title\":\"spotify.com\"}},{\"web\":{\"uri\":\"https://d\",\"title\":\"rappler.com\"}},{\"web\":{\"uri\":\"https://e\",\"title\":\"x.com\"}}]}}]}";
+        Agent.Reply reply=Agent.reply(body,true);
+        assertEquals("Top OPM tracks this week include songs by SB19.",reply.text);
+        assertEquals(Arrays.asList("spotify.com","billboard.com","rappler.com"),reply.sources);
+        Agent.Reply plain=Agent.reply("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Hi\"}]}}]}",true);
+        assertEquals("Hi",plain.text);assertTrue(plain.sources.isEmpty());
+        for(String bad:new String[]{"{}","{\"candidates\":[{\"finishReason\":\"SAFETY\"}]}","nope"}){try{Agent.reply(bad,true);fail(bad);}catch(IllegalArgumentException expected){}}
+        try{Agent.reply("{\"candidates\":[{\"finishReason\":\"SAFETY\"}]}",true);}catch(IllegalArgumentException e){assertTrue(e.getMessage().contains("declined"));}
+        assertTrue(Agent.reply("{\"choices\":[{\"message\":{\"content\":\"ok\"}}]}",false).sources.isEmpty());
+    }
+    @Test public void promptsSendFavouriteAppQuestionsToSearchOnlyWhenAvailable(){
+        String searching=Agent.systemPrompt("Monday","Favourite apps on this TV: Spotify.",true);
+        assertTrue(searching.contains("Use Google Search"));
+        assertTrue(searching.contains("favourite apps"));
+        assertTrue(searching.contains("OPM"));
+        String offline=Agent.systemPrompt("Monday","",false);
+        assertTrue(offline.contains("cannot search the web"));
+        assertFalse(offline.contains("Use Google Search"));
     }
     @Test public void answersAreReadFromTheFirstChoice(){
         assertEquals("Bus 10 arrives in 4 min.",Agent.answer("{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"  Bus 10 arrives in 4 min. \"}}]}"));

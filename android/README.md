@@ -33,15 +33,17 @@ A floating voice orb in the bottom-right corner of the home screen, ported from 
 - **Talk:** select the orb and press OK, or press the remote's search button. **Type:** hold OK on the orb. Press OK again or Back to stop.
 - **Colour shows state:** calm blue when idle, teal while listening, amber while thinking or speaking. The orb pulses with your voice and with each spoken word, and stays still when the TV's animations are turned off.
 - **Voice is free and on the TV:** listening uses Android's speech recogniser and replies use the TV's built-in text-to-speech. No voice API key is needed. If in-app listening is unavailable, BAY65 falls back to the system voice screen, then to typing. Microphone permission is requested only the first time you talk.
-- **Answers come from a free provider you choose**, all through the same OpenAI-compatible request:
+- **Answers come from a free provider you choose.** Gemini uses its own API (which allows web search); the others use the OpenAI-compatible format:
 
 | Provider | Default model (editable) | Key |
 |---|---|---|
-| Google Gemini free tier | `gemini-flash-latest` | Free from aistudio.google.com/apikey |
+| Google Gemini free tier | `gemini-3.5-flash-lite` | Free from aistudio.google.com/apikey |
 | Groq free tier | `llama-3.3-70b-versatile` | Free from console.groq.com/keys |
 | OpenRouter free models | `meta-llama/llama-3.3-70b-instruct:free` | Free from openrouter.ai/keys |
 | Ollama or another OpenAI-compatible server | `llama3.2` | Optional; the server must use `https://` |
 
+- **Web search (Gemini only):** with **Search the web with Google for current answers** on (the default), Gemini can use Grounding with Google Search for anything current: new releases, top 10 lists, trending songs or shows, news, sports and prices. Up to three source sites appear under the answer on screen; they are not read aloud. Searched answers count against Gemini's free-tier search allowance. Groq, OpenRouter and custom servers answer without web search.
+- **Favourite apps:** the assistant knows the names of your Favourites and Playtime apps (when sharing is on), so questions like "What's trending in OPM?" with Spotify, or "Any new comedies?" with Netflix, are answered for those apps using web search. Android does not let BAY65 read other apps' data, such as playlists or watch history.
 - Keys are tested before saving, encrypted with Android Keystore, masked on entry and protected against screenshots, like the LTA key. Free tiers have rate limits and some providers may use free-tier prompts to improve their models.
 - With **Include my bus stops, live arrivals and favourite app names** on (the default), each question includes your stop names and codes, the current arrival estimates and your favourite app names, so you can ask "When is my next 10?". Turn it off to send only your question and the time. The assistant is told never to invent arrival times.
 - BAY65 does not send unencrypted traffic, so Ollama on your home network needs an HTTPS front end such as Tailscale Serve or a reverse proxy.

@@ -33,14 +33,10 @@ import java.util.function.Supplier;
 final class Assistant {
     static final int PERMISSION_REQUEST = 43, VOICE_REQUEST = 44;
 
-    /** What the activity supplies on each question: settings, key and BAY65 context. */
+    /** What the activity supplies: setup state, and each question's request with BAY65 context. */
     interface Host {
         boolean configured();
-        String endpoint();
-        String model();
-        String key();
-        String context();
-        String now();
+        Agent.Call call(List<Agent.Turn> history, String question);
         void openSettings();
     }
 
@@ -173,27 +169,27 @@ final class Assistant {
 
     private void ask(String text) {
         final int ask = ++generation;
-        final String endpoint, model, key, system;
-        try {
-            endpoint = host.endpoint(); model = host.model(); key = host.key();
-            system = Agent.systemPrompt(host.now(), host.context());
-        } catch (IllegalArgumentException invalid) { fail(invalid.getMessage()); return; }
-        final List<Agent.Turn> past = new ArrayList<>(history);
+        final Agent.Call call;
+        try { call = host.call(new ArrayList<>(history), text); }
+        catch (IllegalArgumentException invalid) { fail(invalid.getMessage()); return; }
         show(text, "…");
         setState("THINKING");
         io.execute(() -> {
-            String reply = null, error = null;
-            try { reply = client.ask(endpoint, key, Agent.requestBody(model, system, past, text)); }
+            Agent.Reply reply = null;
+            String error = null;
+            try { reply = client.ask(call); }
             catch (AgentClient.Failure failure) { error = failure.getMessage(); }
-            final String result = reply, problem = error;
+            final Agent.Reply result = reply;
+            final String problem = error;
             main.post(() -> {
                 if (ask != generation || activity.isDestroyed()) return;
                 if (result == null) { fail(problem); return; }
                 history.add(new Agent.Turn("user", text));
-                history.add(new Agent.Turn("assistant", result));
+                history.add(new Agent.Turn("assistant", result.text));
                 while (history.size() > 12) history.remove(0);
-                show(text, result);
-                speak(result, ask);
+                // Sources are shown on screen only; the voice reads just the answer.
+                show(text, result.sources.isEmpty() ? result.text : result.text + "\n\nSources: " + String.join(" · ", result.sources));
+                speak(result.text, ask);
             });
         });
     }

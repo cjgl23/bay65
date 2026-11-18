@@ -28,7 +28,7 @@ public final class Everywhere {
 
     /** Idle opacity choices, in percent. */
     public static final int[] OPACITIES = {15, 30, 50, 100};
-    public static final int DEFAULT_OPACITY = 30;
+    public static final int DEFAULT_OPACITY = 100;
 
     public static Corner corner(String name) {
         for (Corner c : Corner.values()) if (c.name().equals(name)) return c;

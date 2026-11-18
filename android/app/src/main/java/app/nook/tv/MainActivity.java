@@ -152,6 +152,11 @@ public class MainActivity extends Activity {
         compact=getResources().getDisplayMetrics().heightPixels/getResources().getDisplayMetrics().density<600;
         apps.refresh(store);buildHome();
     }
+    @Override protected void onStart(){
+        super.onStart();
+        // Visible from onStart through onStop, including while paused under a translucent panel.
+        AssistantPresence.setLauncherVisible(this,true);
+    }
     @Override protected void onResume(){
         super.onResume();active=true;lifecycle++;
         apps.refresh(store);renderApps();refreshNetwork();
@@ -159,7 +164,7 @@ public class MainActivity extends Activity {
         main.removeCallbacks(tick);main.post(tick);main.removeCallbacks(poll);main.post(poll);restartPhotos();
         if(firstResume){firstResume=false;main.post(()->{if(favouritesRow.getChildCount()>0)favouritesRow.getChildAt(0).requestFocus();});}
         // The launcher shows its own orb, so the Everywhere overlay hides while BAY65 is on screen.
-        AssistantPresence.setLauncherVisible(true);
+        AssistantPresence.setLauncherVisible(this,true);
         AssistantPresence.listen(presence);presence.onPresenceChanged();
         finishEverywhereSetup();
         OrbOverlayService.sync(this);
@@ -174,12 +179,13 @@ public class MainActivity extends Activity {
     @Override protected void onStop(){
         if(assistant!=null)assistant.stop();
         AssistantPresence.unlisten(presence);
-        AssistantPresence.setLauncherVisible(false);
+        AssistantPresence.setLauncherVisible(this,false);
         active=false;lifecycle++;main.removeCallbacks(tick);main.removeCallbacks(poll);main.removeCallbacks(photoTick);
         if(observingNetwork){try{connectivity.unregisterNetworkCallback(networkCallback);}catch(RuntimeException ignored){}observingNetwork=false;}
         super.onStop();
     }
     @Override protected void onDestroy(){
+        AssistantPresence.setLauncherVisible(this,false);
         if(assistant!=null)assistant.release();main.removeCallbacksAndMessages(null);io.shutdownNow();if(settingsDialog!=null)settingsDialog.dismiss();super.onDestroy();
     }
     @Override public boolean onKeyDown(int keyCode,KeyEvent event){
@@ -677,7 +683,7 @@ public class MainActivity extends Activity {
         boolean on=store.preferences.getBoolean(Everywhere.ENABLED,false),permitted=Settings.canDrawOverlays(this);
         paragraph("Keep the BAY65 Assistant orb in a corner of the screen while you use other apps, such as YouTube or Netflix. The orb is display-only: it never takes the remote's focus, so navigation and playback work as usual.");
         heading("Asking from another app");
-        paragraph("Android does not let apps use remote buttons while another app is open, so ask in one of these ways:\n• Say \"Hey Google, open Ask BAY65\" with the remote's Assistant button\n• Open Ask BAY65 from the TV's apps or notifications\n• Press Home and select the orb, as today\nA small BAY65 panel opens over the app; press Back to return. Some apps may pause while it is open.");
+        paragraph("Choose a remote shortcut below to open Ask BAY65 over another app. Press Back to return. The chosen button replaces its usual action while Everywhere Mode is on. Google Assistant may also open Ask BAY65 by name on some TVs, but this is device-dependent.");
         heading("Privacy");
         paragraph("BAY65 never listens unless you ask, never reads or records other apps' screens, and makes no requests while idle. Bus arrivals are fetched only when you open Ask BAY65. Some apps can hide overlays; BAY65 respects that.");
         if(!assistantReady()){paragraph("Set up the BAY65 Assistant first.");focusPage();return;}
@@ -687,6 +693,21 @@ public class MainActivity extends Activity {
             new AlertDialog.Builder(this).setTitle("Turn on Everywhere Mode?")
                 .setMessage("BAY65 will show its orb over other apps and keep an \"Ask BAY65\" notification while it runs. It needs Android's permission to display over other apps. The microphone is used only after you ask.")
                 .setNegativeButton("Cancel",null).setPositiveButton("Continue",(d,w)->enableEverywhere()).show();
+        }));
+        heading("Remote shortcut");
+        int shortcut=store.preferences.getInt(RemoteShortcutService.KEY,0);
+        String shortcutLabel="Off";
+        for(int i=0;i<RemoteShortcutService.KEYS.length;i++)if(RemoteShortcutService.KEYS[i]==shortcut)shortcutLabel=RemoteShortcutService.LABELS[i];
+        paragraph("The optional BAY65 remote shortcut accessibility service receives button events to open the assistant. It does not read screen content, save button presses, or listen while idle. Android may give key filtering to only one service; other button-mapping services can conflict.");
+        page.addView(button("Shortcut button · "+shortcutLabel,()->{
+            int selected=0;for(int i=0;i<RemoteShortcutService.KEYS.length;i++)if(RemoteShortcutService.KEYS[i]==store.preferences.getInt(RemoteShortcutService.KEY,0))selected=i;
+            new AlertDialog.Builder(this).setTitle("Assistant shortcut button").setSingleChoiceItems(RemoteShortcutService.LABELS,selected,(d,which)->{
+                store.preferences.edit().putInt(RemoteShortcutService.KEY,RemoteShortcutService.KEYS[which]).apply();d.dismiss();showEverywhere();
+            }).setNegativeButton("Cancel",null).show();
+        }));
+        page.addView(button("Remote shortcut service · "+(RemoteShortcutService.enabled(this)?"Enabled":"Enable in Accessibility"),()->{
+            if(store.preferences.getInt(RemoteShortcutService.KEY,0)==0)store.preferences.edit().putInt(RemoteShortcutService.KEY,android.view.KeyEvent.KEYCODE_MENU).apply();
+            showAccessibility();
         }));
         heading("Appearance");
         Everywhere.Corner corner=Everywhere.corner(store.preferences.getString(Everywhere.CORNER,null));
@@ -698,7 +719,7 @@ public class MainActivity extends Activity {
             new AlertDialog.Builder(this).setTitle("Orb size").setSingleChoiceItems(labels,size.ordinal(),(d,which)->{store.preferences.edit().putString(Everywhere.SIZE,all[which].name()).apply();d.dismiss();restartEverywhere();showEverywhere();}).setNegativeButton("Cancel",null).show();}));
         page.addView(button("Idle opacity · "+opacity+"%",()->{String[] labels=new String[Everywhere.OPACITIES.length];int selected=0;for(int i=0;i<labels.length;i++){labels[i]=Everywhere.OPACITIES[i]+"%";if(Everywhere.OPACITIES[i]==opacity)selected=i;}
             new AlertDialog.Builder(this).setTitle("Idle opacity").setSingleChoiceItems(labels,selected,(d,which)->{store.preferences.edit().putInt(Everywhere.OPACITY,Everywhere.OPACITIES[which]).apply();d.dismiss();showEverywhere();}).setNegativeButton("Cancel",null).show();}));
-        CheckBox dim=new CheckBox(this);dim.setText("Dim further after 30 seconds without assistant activity");dim.setTextColor(INK);dim.setTextSize(14);dim.setChecked(store.preferences.getBoolean(Everywhere.AUTO_DIM,true));dim.setPadding(0,dp(7),0,dp(7));
+        CheckBox dim=new CheckBox(this);dim.setText("Dim further after 30 seconds without assistant activity");dim.setTextColor(INK);dim.setTextSize(14);dim.setChecked(store.preferences.getBoolean(Everywhere.AUTO_DIM,false));dim.setPadding(0,dp(7),0,dp(7));
         dim.setOnCheckedChangeListener((b,checked)->store.preferences.edit().putBoolean(Everywhere.AUTO_DIM,checked).apply());page.addView(dim);
         CheckBox restore=new CheckBox(this);restore.setText("Restore the orb after the TV restarts");restore.setTextColor(INK);restore.setTextSize(14);restore.setChecked(store.preferences.getBoolean(Everywhere.RESTORE,true));restore.setPadding(0,dp(7),0,dp(7));
         restore.setOnCheckedChangeListener((b,checked)->store.preferences.edit().putBoolean(Everywhere.RESTORE,checked).apply());page.addView(restore);

@@ -2,11 +2,19 @@
 
 ## Everywhere Mode (unreleased)
 
-Automated only: JVM unit tests for the overlay rules (visibility, dimming, drift, frame rate) and the shared context builder, compilation against the Android 16 framework, and CI (lint, build, release checks). Native instrumentation now also asserts that the panel, service and restart receiver are not exported and that "Ask BAY65" stays disabled until turned on. **No emulator or physical-device validation yet.** Use the [acceptance checklist](EVERYWHERE.md#physical-tv-acceptance-checklist).
+Existing Everywhere Mode coverage includes JVM tests for overlay visibility, dimming, drift and frame rate, plus the shared context builder. The development instrumentation runner contains assertions for the non-exported panel, overlay service and restart receiver, and for the Ask BAY65 alias being disabled by default; this is distinct from the new accessibility service, which is exported under Android’s `BIND_ACCESSIBILITY_SERVICE` permission.
+
+For the pending shortcut/visibility changes, **local TV assembly, JVM unit tests and TV lint passed**. The signed maintenance APK passed package identity, original-signer, alignment and key-material checks before an in-place installation. On 18 November 2026, the owner confirmed physical Menu-button activation over Prime Video on the PrismPlus Android 10 TV. ADB inspection verified AssistantActivity foreground, then Prime Video foreground after Back. The service was enabled through the TV’s accessibility UI, without an ADB grant or secure-settings edit. Opacity was 100%, auto-dimming was unchecked, and Bottom right / Small were retained.
+
+Google Assistant launching “Ask BAY65” by name and synthetic ADB Menu input did not activate the panel on this TV. Neither is required by the physical Menu shortcut. Voice answering was previously owner-confirmed, but that does not establish all panel voice, playback, reboot, shortcut-Off or competing-service scenarios for this build.
+
+For the duplicate-orb fix, regression tests cover overlapping launcher/panel instances, repeated starts and a late stop from an older task. The fix passed local TV assembly, JVM unit tests and TV lint and was installed in place. Three TV round trips between the app-task launcher, Prime Video and the Home-task launcher showed exactly one overlay over Prime Video and none over either BAY65 launcher. Opening the panel over BAY65 and returning with Back also left no overlay window. These results were checked using Android window and activity dumps, not a playback or screenshot comparison.
+
+The full acceptance checklist remains incomplete. Before PR submission, local release/TV lint, JVM tests, all three variant builds, variant metadata checks, 14 Python server/release-safety tests and browser DOM checks passed. No new CI or native-instrumentation execution result is claimed for the pending shortcut changes. See the [exact setup and scoped results](EVERYWHERE.md#exact-setup-used-on-the-owners-tv) and [acceptance checklist](EVERYWHERE.md#physical-tv-acceptance-checklist).
 
 ## v0.3.0
 
-Automated only so far. GitHub Actions passed on each assistant PR (#1–#4): Android lint (release and tv), unit tests, assembly of all variants, release-artifact verification, and Trivy/dependency scans. JVM unit tests cover provider requests, error mapping, grounding parsing and voice-fallback rules. The owner confirmed the assistant answering spoken questions on the Android 10 TV during development (Gemini, after correcting the model name). A full physical acceptance pass of 0.3.0, including web search, search-key behaviour, voice fallback and upgrade from 0.2.2, has not yet been recorded.
+For the earlier Assistant PRs, GitHub Actions passed on each assistant PR (#1–#4): Android lint (release and tv), unit tests, assembly of all variants, release-artifact verification, and Trivy/dependency scans. JVM unit tests cover provider requests, error mapping, grounding parsing and voice-fallback rules. The owner confirmed the assistant answering spoken questions on the Android 10 TV during development (Gemini, after correcting the model name). A full physical acceptance pass of 0.3.0, including web search, search-key behaviour, voice fallback and upgrade from 0.2.2, has not yet been recorded.
 
 ## v0.2.2
 

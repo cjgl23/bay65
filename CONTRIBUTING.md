@@ -32,6 +32,12 @@ python3 -m scripts.check_apk_metadata --build-tools "$ANDROID_HOME/build-tools/3
 
 The above assumes no `NOOK_STORE_FILE` / `NOOK_STORE_PASSWORD` environment signing configuration. Development builds use `app.bay65.tv.debug`, separate from both the release and private maintenance packages. No owner's signing key is needed for contributor builds. Use an isolated test device for [instrumentation](android/README.md#verification); never install the instrumentation or unsigned maintenance APK on the configured personal TV.
 
+## Remote shortcut and overlay validation
+
+For shortcut changes, run TV assembly, unit tests and TV lint, then use the [Everywhere Mode acceptance checklist](android/EVERYWHERE.md#physical-tv-acceptance-checklist) on an authorized test TV. Enable **BAY65 remote shortcut** through Android Accessibility after choosing a button; do not silently enable it or replace other enabled services. Verify the physical remote button opens the panel over another app and Back returns to it. Synthetic ADB Menu input did not trigger the shortcut on the owner’s TV and is not a substitute for a physical button test.
+
+Record shortcut-Off and Everywhere Mode-Off behavior, unrelated button navigation, competing key filters, appearance choices and reboot behavior separately. Do not claim those cases passed based on compilation or a single activation check. Keep read-only device diagnostics and private signing material out of the PR; summarize results in [validation evidence](android/VALIDATION.md).
+
 ## Change workflow
 
 1. Update from `main`; create a short-lived feature, fix or docs branch.

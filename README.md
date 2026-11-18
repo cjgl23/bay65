@@ -4,7 +4,7 @@
 
 **Your home. Your city. Your screen.**
 
-A remote-first Android TV launcher that brings live Singapore bus arrivals, favourite apps and personal photo backgrounds together. Built as an independent personal engineering project, inspired by *bahay* (home), Singapore's Marina Bay, bus bays and +65.
+A remote-first Android TV launcher that brings live Singapore bus arrivals, favourite apps, personal photo backgrounds and an optional voice assistant together. Built as an independent personal engineering project, inspired by *bahay* (home), Singapore's Marina Bay, bus bays and +65.
 
 **Version:** 0.3.0 · Android TV 8.0+ · MIT-licensed source · Source-only distribution
 
@@ -17,7 +17,8 @@ A remote-first Android TV launcher that brings live Singapore bus arrivals, favo
 - **BAY65 Transit:** up to four configurable stops and eight services per stop, three independently colour-coded arrival estimates, 20-second foreground refresh, stale-data handling, adaptive card sizing and LTA stop-directory lookup.
 - **BAY65 Memories:** private photo import, configurable display fit and slideshow intervals.
 - **Remote-first home:** installed-app discovery, favourites and Playtime organisation, D-pad navigation, system navigation sounds and device-dependent settings shortcuts.
-- **BAY65 Assistant (optional):** a floating voice orb that answers questions about your buses, your favourite apps (with Gemini web search for current releases and charts) and more, using free AI providers (Google Gemini, Groq, OpenRouter or your own Ollama server) and the TV's built-in speech. See [Android setup](android/README.md#bay65-assistant-optional). Optional [Everywhere Mode](android/EVERYWHERE.md) keeps the orb available over other apps.
+- **BAY65 Assistant (optional):** a floating voice orb that answers questions about your buses, your favourite apps (with Gemini web search for current releases and charts) and more, using free AI providers (Google Gemini, Groq, OpenRouter or your own Ollama server) and the TV's built-in speech. See [Android setup](android/README.md#bay65-assistant-optional).
+- **Everywhere Mode (optional):** keep the orb visible over other apps and press a configurable remote button to open the Assistant panel. The Menu shortcut requires enabling **BAY65 remote shortcut** in Android Accessibility; press Back to return to the previous app. Opacity defaults to 100%, with auto-dimming off. See [setup and device-test results](android/EVERYWHERE.md#exact-setup-used-on-the-owners-tv).
 - **Local-first privacy:** encrypted LTA key storage using Android Keystore, app-private settings and photos, no analytics or cloud accounts.
 
 ## Engineering approach
@@ -31,7 +32,18 @@ A remote-first Android TV launcher that brings live Singapore bus arrivals, favo
 | Browser preview | HTML/CSS/JavaScript, optional loopback Python server |
 | Delivery | Gradle, GitHub Actions, pinned reusable workflows, dependency/secret scanning and verified release packaging |
 
-The project evolved through iterative physical-device testing. The maintenance build was installed on the owner's Android 10 TV, with no further issues reported for v0.2.2. A separate public APK has not been physically accepted and is not distributed here. See [validation](android/VALIDATION.md).
+The 0.3.0 maintenance build with the pending remote-shortcut changes is installed on the owner’s PrismPlus Android 10 TV. The owner confirmed physical Menu-button activation over Prime Video; Back returning to Prime Video was also verified. Other-app playback, reboot persistence and a full Everywhere Mode acceptance pass remain unverified. A separate public APK is not distributed here. See [validation](android/VALIDATION.md).
+
+## Use the Assistant over other apps
+
+The remote shortcut is included in the current unreleased source and is pending PR review. Assistant and Everywhere Mode are optional and off by default.
+
+1. Open **BAY65 Settings → BAY65 Assistant**, select your provider, enter your own key, and choose **Save and test**. The key is saved only after a successful test; provider quotas apply.
+2. Open **Everywhere Mode**, turn it on and allow **Display over other apps**.
+3. Choose **Shortcut button → Menu**, then select **Remote shortcut service → Enable in Accessibility**. On the tested TV, the path is **Open Android settings → Device Preferences → Accessibility → BAY65 remote shortcut → Enable → OK**.
+4. Open another app and press **Menu** to ask BAY65. Press **Back** to return. The floating orb is display-only; it cannot receive D-pad focus over another app.
+
+The selected button replaces its normal action while Everywhere Mode is on. Set the shortcut to Off to restore it. The optional accessibility service receives button events without reading screen content or storing key history. Google Assistant launching “Ask BAY65” by name is device-dependent and did not work on the tested TV. See the [complete setup, visibility controls and verification notes](android/EVERYWHERE.md).
 
 ## Try the browser preview
 

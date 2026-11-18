@@ -157,7 +157,7 @@ public final class AssistantActivity extends Activity implements AssistantPresen
 
     @Override protected void onStart() {
         super.onStart();
-        AssistantPresence.setPanelVisible(true);
+        AssistantPresence.setPanelVisible(this, true);
         AssistantPresence.listen(this);
     }
 
@@ -193,12 +193,13 @@ public final class AssistantActivity extends Activity implements AssistantPresen
     @Override protected void onStop() {
         AssistantPresence.unlisten(this);
         main.removeCallbacks(closeIfIdle);
-        AssistantPresence.setPanelVisible(false);
+        AssistantPresence.setPanelVisible(this, false);
         assistant.stop();
         super.onStop();
     }
 
     @Override protected void onDestroy() {
+        AssistantPresence.setPanelVisible(this, false);
         main.removeCallbacksAndMessages(null);
         assistant.release();
         io.shutdownNow();

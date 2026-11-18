@@ -71,6 +71,11 @@
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Shows the user-enabled BAY65 Assistant orb over other apps on Android TV and keeps its Ask BAY65 notification available. No microphone, location or media use in this service." />
         </service>
+        <service android:name=".RemoteShortcutService" android:exported="true"
+            android:label="@string/shortcut_name" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/remote_shortcut" />
+        </service>
         <receiver android:name=".EverywhereBootReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

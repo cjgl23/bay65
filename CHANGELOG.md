@@ -4,7 +4,13 @@ This records released source versions and significant changes. It does not imply
 
 ## Unreleased
 
-- **Everywhere Mode** (optional, off by default): the assistant orb stays in a chosen corner over other apps, and "Ask BAY65" opens a translucent assistant panel over the current app via Google Assistant ("Hey Google, open Ask BAY65"), the notification, or the app list. The overlay is display-only and never takes remote focus. Settings for position, size, idle opacity, auto-dim and restore after restart; burn-in drift and a 5 fps idle redraw. Not yet validated on a physical TV. See [Everywhere Mode](android/EVERYWHERE.md).
+- Fix duplicate orbs when returning from another app: track visible launcher and panel instances separately, so a stopped app-task instance cannot clear the Home task’s visibility.
+
+- Make the overlay orb fully opaque by default with automatic dimming off; opacity and dimming remain adjustable.
+
+- Add an optional configurable remote-button shortcut (Menu, Red, Blue or Search) for Ask BAY65 over other apps. Requires the BAY65 remote shortcut accessibility service, with no screen-reading capability or key history. Off by default.
+
+- **Everywhere Mode** (optional, off by default): the assistant orb stays in a chosen corner over other apps, and "Ask BAY65" opens a translucent assistant panel over the current app via the optional remote shortcut, notification, or an external app list. Google Assistant launching the entry by name is device-dependent and did not work on the owner’s TV. The overlay is display-only and never takes remote focus. Settings for position, size, idle opacity, auto-dim and restore after restart; burn-in drift and a 5 fps idle redraw. The owner confirmed physical Menu activation over Prime Video on Android 10; Back returning to Prime Video was verified. Other playback and reboot scenarios remain unverified. See [Everywhere Mode](android/EVERYWHERE.md).
 - New permissions, requested only when Everywhere Mode is turned on: display over other apps, foreground service (special use), notifications (Android 13+) and start at boot.
 - Shared assistant state and settings: one conversation and one provider configuration for the launcher and the panel.
 
@@ -66,4 +72,4 @@ This records released source versions and significant changes. It does not imply
 ## 0.1.0 — Historical Nook baseline
 
 - Native Android TV launcher and offline/live browser preview with configurable bus arrivals, app organisation and photo backgrounds.
-- See the historical [validation notes](android/VALIDATION.md#historical-validation-nook-010).
+- See the historical [validation notes](android/VALIDATION.md#earlier-development-milestones).

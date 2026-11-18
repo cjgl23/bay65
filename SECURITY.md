@@ -12,4 +12,6 @@ Use **Security → Report a vulnerability** if private reporting is available. O
 
 Each user supplies their own LTA DataMall key and, for the optional assistant, their own AI provider key. Never commit credentials, local preferences or signing material. The Android app stores its keys using Android Keystore, excludes private settings from backups, and uses HTTPS. The browser preview is a loopback-only development service, not a public web service.
 
+The optional remote shortcut accessibility service receives key events while enabled by the user. It requests key-filter capability without screen-content retrieval or an accessibility event stream, stores no key history and handles only the selected shortcut while Everywhere Mode is active. The selected button replaces its usual action in that mode. Disable it in Android Accessibility to revoke access; turning the shortcut Off stops handling but does not revoke the service permission.
+
 CI validates source tests, Android lint/build and release artifacts. The shared security workflow scans for vulnerabilities, secrets and misconfiguration. These checks do not constitute a security certification.

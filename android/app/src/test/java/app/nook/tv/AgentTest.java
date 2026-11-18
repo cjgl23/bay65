@@ -54,6 +54,24 @@ public class AgentTest {
         assertTrue(Agent.failure(404).contains("model name"));
         assertTrue(Agent.failure(503).contains("temporarily"));
     }
+    @Test public void geminiBadKeyIsReportedAsAKeyProblemNotAModelProblem(){
+        // Captured from generativelanguage.googleapis.com: an invalid key returns HTTP 400 in an array.
+        String gemini="[{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Please pass a valid API key\",\n    \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n]";
+        String message=Agent.failure(400,gemini);
+        assertTrue(message,message.contains("API key"));
+        assertFalse(message,message.contains("model"));
+        assertTrue(message.endsWith("(Please pass a valid API key)"));
+    }
+    @Test public void providerReasonsDecideModelAndOtherErrors(){
+        assertTrue(Agent.failure(400,"{\"error\":{\"message\":\"models/gemini-x is not found\"}}").contains("model name"));
+        assertTrue(Agent.failure(404,null).contains("model name"));
+        String other=Agent.failure(400,"{\"error\":{\"message\":\"Bad thing\\nhappened\"}}");
+        assertEquals("The provider rejected the request. (Bad thing happened)",other);
+        assertEquals("The provider rejected the request.",Agent.failure(400,"<html>oops</html>"));
+        assertTrue(Agent.failure(500,"{\"error\":{\"message\":\"secret detail\"}}").contains("temporarily"));
+        StringBuilder longReason=new StringBuilder();for(int i=0;i<50;i++)longReason.append("word ");
+        assertTrue(Agent.failure(429,"{\"error\":{\"message\":\""+longReason+"\"}}").length()<240);
+    }
     @Test public void spokenFormDropsMarkdownAndLinks(){
         assertEquals("Bus 10 is in 3 min. See LTA.",Agent.spokenForm("**Bus 10** is in 3 min. See [LTA](https://lta.gov.sg). ```code```"));
     }

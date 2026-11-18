@@ -107,12 +107,37 @@ public final class Agent {
         }
     }
 
-    public static String failure(int status) {
-        if (status == 400 || status == 404) return "The provider rejected the request. Check the model name in Assistant settings.";
-        if (status == 401 || status == 403) return "The provider rejected the API key. Check it in Assistant settings.";
-        if (status == 429) return "The free-tier limit was reached. Wait a minute and try again.";
+    public static String failure(int status) { return failure(status, null); }
+
+    /**
+     * Maps a provider error to an actionable message. Gemini reports a bad key as HTTP 400,
+     * so the provider's own message decides between key and model problems before the status does.
+     */
+    public static String failure(int status, String body) {
+        String reason = providerMessage(body), lower = reason.toLowerCase(Locale.ROOT);
+        if (status == 401 || status == 403 || lower.contains("api key") || lower.contains("api_key"))
+            return "The provider rejected the API key. Check it in Assistant settings." + detail(reason);
+        if (status == 429) return "The free-tier limit was reached. Wait a minute and try again." + detail(reason);
+        if (status == 404 || lower.contains("model"))
+            return "The provider rejected the model. Check the model name in Assistant settings." + detail(reason);
+        if (status == 400) return "The provider rejected the request." + detail(reason);
         return "The assistant is temporarily unavailable. Try again shortly.";
     }
+
+    /** error.message from an OpenAI-style body, including Gemini's array-wrapped form; "" if absent. */
+    static String providerMessage(String body) {
+        if (body == null || body.trim().isEmpty()) return "";
+        try {
+            String text = body.trim();
+            JSONObject root = text.startsWith("[") ? new JSONArray(text).getJSONObject(0) : new JSONObject(text);
+            Object error = root.opt("error");
+            String message = error instanceof JSONObject ? ((JSONObject) error).optString("message", "") : error instanceof String ? (String) error : "";
+            message = message.replaceAll("[\\p{Cntrl}]+", " ").replaceAll("\\s+", " ").trim();
+            return message.length() > 160 ? message.substring(0, 157) + "…" : message;
+        } catch (JSONException e) { return ""; }
+    }
+
+    private static String detail(String reason) { return reason.isEmpty() ? "" : " (" + reason + ")"; }
 
     /** Strips formatting a TV voice should not read out, as Rupert does before speech. */
     public static String spokenForm(String text) {

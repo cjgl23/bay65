@@ -7,6 +7,7 @@ This records released source versions and significant changes. It does not imply
 - Add the optional BAY65 Assistant: a floating, state-coloured voice orb ported from Rupert AI, using the TV's free speech recogniser and text-to-speech, with Google Gemini, Groq, OpenRouter or an HTTPS OpenAI-compatible server (such as Ollama) for answers.
 - Encrypt the assistant key with Android Keystore; share stops, live arrivals and favourite app names only while the opt-out setting is on.
 - Request microphone permission only on first use; fall back to the system voice screen or typing.
+- Show the provider's reason for rejected assistant requests, and report Gemini's HTTP 400 invalid-key response as a key problem rather than a model problem.
 
 ## 0.2.2 — 15 November 2026
 

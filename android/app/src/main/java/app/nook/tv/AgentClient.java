@@ -14,6 +14,18 @@ final class AgentClient {
         Failure(String message) { super(message); }
     }
 
+    /** At most 64 KB of the error body, read only to show the provider's reason. */
+    private static String errorBody(HttpsURLConnection connection) {
+        try (InputStream input = connection.getErrorStream()) {
+            if (input == null) return null;
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            int count, total = 0;
+            while ((count = input.read(buffer)) != -1 && total < 65536) { total += count; output.write(buffer, 0, count); }
+            return output.toString("UTF-8");
+        } catch (IOException unavailable) { return null; }
+    }
+
     String ask(String endpoint, String key, String body) throws Failure {
         HttpsURLConnection connection = null;
         try {
@@ -31,7 +43,7 @@ final class AgentClient {
             connection.setFixedLengthStreamingMode(payload.length);
             try (OutputStream output = connection.getOutputStream()) { output.write(payload); }
             int code = connection.getResponseCode();
-            if (code != 200) throw new Failure(Agent.failure(code));
+            if (code != 200) throw new Failure(Agent.failure(code, errorBody(connection)));
             try (InputStream input = connection.getInputStream(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
                 byte[] buffer = new byte[8192];
                 int count, total = 0;

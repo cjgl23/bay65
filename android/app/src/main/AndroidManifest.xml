@@ -5,6 +5,13 @@
     <!-- Asked only when the BAY65 Assistant first listens; typing and the system voice screen work without it. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <!-- Everywhere Mode (off by default): the orb over other apps, its foreground service and "Ask BAY65"
+         notification, and restoring it after a restart. Each is requested only when the user turns it on. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-feature android:name="android.software.leanback" android:required="true" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <queries>
@@ -42,5 +49,33 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <!-- Everywhere Mode panel: opened on request over the current app. Not exported; reached only via
+             the alias below, BAY65's own notification, or BAY65 itself. No screenOrientation: a translucent
+             activity that fixes its orientation crashes on Android 8.0. -->
+        <activity android:name=".AssistantActivity" android:exported="false"
+            android:theme="@style/AssistantPanel" android:taskAffinity="" android:launchMode="singleTask"
+            android:excludeFromRecents="true" android:label="@string/ask_name"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize" />
+        <!-- "Ask BAY65" in the TV's app list and for "Hey Google, open Ask BAY65". Disabled until the user
+             turns on Everywhere Mode; it only opens the panel and accepts no data. -->
+        <activity-alias android:name=".AskBay65" android:targetActivity=".AssistantActivity"
+            android:exported="true" android:enabled="false" android:label="@string/ask_name"
+            android:icon="@drawable/bay65_icon" android:banner="@drawable/bay65_banner">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <service android:name=".OrbOverlayService" android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Shows the user-enabled BAY65 Assistant orb over other apps on Android TV and keeps its Ask BAY65 notification available. No microphone, location or media use in this service." />
+        </service>
+        <receiver android:name=".EverywhereBootReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

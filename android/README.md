@@ -50,6 +50,10 @@ A floating voice orb in the bottom-right corner of the home screen, ported from 
 - BAY65 does not send unencrypted traffic, so Ollama on your home network needs an HTTPS front end such as Tailscale Serve or a reverse proxy.
 - Conversation history (last six exchanges) is kept in memory only, and is cleared when you save new assistant settings or turn the assistant off. **Turn off and remove saved key** clears the provider settings and key.
 
+### Everywhere Mode (optional)
+
+Keep the orb in a corner while you use other apps, and ask from anywhere with "Hey Google, open Ask BAY65" or the "Ask BAY65" notification. Off by default; needs Android's "Display over other apps" permission. The orb is display-only and never takes the remote's focus. See [Everywhere Mode](EVERYWHERE.md) for how it works, compatibility, limitations and the TV acceptance checklist.
+
 ## Photos
 
 Import photos through an installed Android image/file picker, including files on a USB drive when supported by that picker. Some TVs only expose a placeholder picker. BAY65 detects that and offers a file-manager setup route rather than launching the placeholder. A compatible file manager is a separate installation chosen by the user.

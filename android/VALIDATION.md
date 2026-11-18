@@ -1,5 +1,9 @@
 # BAY65 validation evidence
 
+## Everywhere Mode (unreleased)
+
+Automated only: JVM unit tests for the overlay rules (visibility, dimming, drift, frame rate) and the shared context builder, compilation against the Android 16 framework, and CI (lint, build, release checks). Native instrumentation now also asserts that the panel, service and restart receiver are not exported and that "Ask BAY65" stays disabled until turned on. **No emulator or physical-device validation yet.** Use the [acceptance checklist](EVERYWHERE.md#physical-tv-acceptance-checklist).
+
 ## v0.3.0
 
 Automated only so far. GitHub Actions passed on each assistant PR (#1–#4): Android lint (release and tv), unit tests, assembly of all variants, release-artifact verification, and Trivy/dependency scans. JVM unit tests cover provider requests, error mapping, grounding parsing and voice-fallback rules. The owner confirmed the assistant answering spoken questions on the Android 10 TV during development (Gemini, after correcting the model name). A full physical acceptance pass of 0.3.0, including web search, search-key behaviour, voice fallback and upgrade from 0.2.2, has not yet been recorded.

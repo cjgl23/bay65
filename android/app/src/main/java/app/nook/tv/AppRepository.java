@@ -55,6 +55,15 @@ final class AppRepository {
         }
         store.preferences.edit().putBoolean("apps_initialised",true).apply();store.saveApps();
     }
+    /** App names in a section without reloading artwork or changing saved choices (for the Everywhere panel). */
+    static List<String> labels(Context context,NookStore store,String section){
+        PackageManager pm=context.getPackageManager();List<String> result=new ArrayList<>();
+        for(NookStore.AppChoice choice:store.apps){
+            if(!section.equals(choice.section))continue;
+            try{result.add(pm.getApplicationLabel(pm.getApplicationInfo(choice.packageName,0)).toString());}catch(PackageManager.NameNotFoundException removed){}
+        }
+        return result;
+    }
     Entry find(String pkg){for(Entry e:entries)if(e.packageName.equals(pkg))return e;return null;}
     List<Entry> section(NookStore store,String section){
         List<Entry> result=new ArrayList<>();

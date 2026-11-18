@@ -94,6 +94,10 @@ public class MainActivity extends Activity {
     private SecretStore agentSecrets;
     private String agentKey;
     private Assistant assistant;
+    private AgentSettings agentSettings;
+    private View assistantDock;
+    /** Hides the launcher's orb while the Ask BAY65 panel is open over it, so only one orb shows. */
+    private final AssistantPresence.Listener presence=()->{if(assistantDock!=null)assistantDock.setVisibility(AssistantPresence.panelVisible?View.INVISIBLE:View.VISIBLE);};
     private final AgentClient agentClient=new AgentClient();
     private TextView dialogBack;
     private Runnable pageBack=this::showSettingsMenu;
@@ -143,7 +147,7 @@ public class MainActivity extends Activity {
         super.onCreate(state);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-        store=new NookStore(this);secrets=new SecretStore(this);apiKey=secrets.read();agentSecrets=SecretStore.assistant(this);agentKey=agentSecrets.read();apps=new AppRepository(this);photoManager=new PhotoManager(this,store);
+        store=new NookStore(this);secrets=new SecretStore(this);apiKey=secrets.read();agentSecrets=SecretStore.assistant(this);agentKey=agentSecrets.read();agentSettings=new AgentSettings(this);apps=new AppRepository(this);photoManager=new PhotoManager(this,store);
         connectivity=(ConnectivityManager)getSystemService(CONNECTIVITY_SERVICE);
         compact=getResources().getDisplayMetrics().heightPixels/getResources().getDisplayMetrics().density<600;
         apps.refresh(store);buildHome();
@@ -154,6 +158,11 @@ public class MainActivity extends Activity {
         if(!observingNetwork){try{connectivity.registerDefaultNetworkCallback(networkCallback);observingNetwork=true;}catch(RuntimeException ignored){}}
         main.removeCallbacks(tick);main.post(tick);main.removeCallbacks(poll);main.post(poll);restartPhotos();
         if(firstResume){firstResume=false;main.post(()->{if(favouritesRow.getChildCount()>0)favouritesRow.getChildAt(0).requestFocus();});}
+        // The launcher shows its own orb, so the Everywhere overlay hides while BAY65 is on screen.
+        AssistantPresence.setLauncherVisible(true);
+        AssistantPresence.listen(presence);presence.onPresenceChanged();
+        finishEverywhereSetup();
+        OrbOverlayService.sync(this);
     }
     @Override protected void onNewIntent(Intent intent){
         super.onNewIntent(intent);setIntent(intent);
@@ -164,6 +173,8 @@ public class MainActivity extends Activity {
     }
     @Override protected void onStop(){
         if(assistant!=null)assistant.stop();
+        AssistantPresence.unlisten(presence);
+        AssistantPresence.setLauncherVisible(false);
         active=false;lifecycle++;main.removeCallbacks(tick);main.removeCallbacks(poll);main.removeCallbacks(photoTick);
         if(observingNetwork){try{connectivity.unregisterNetworkCallback(networkCallback);}catch(RuntimeException ignored){}observingNetwork=false;}
         super.onStop();
@@ -563,7 +574,7 @@ public class MainActivity extends Activity {
     private boolean assistantReady(){Agent.Provider provider=assistantProvider();return provider!=null&&(agentKey!=null||!provider.keyRequired);}
     /** The floating orb sits in the bottom-right corner; its transcript bubble opens to its left. */
     private void buildAssistant(){
-        LinearLayout dock=horizontal();dock.setGravity(Gravity.BOTTOM|Gravity.END);
+        LinearLayout dock=horizontal();dock.setGravity(Gravity.BOTTOM|Gravity.END);assistantDock=dock;
         LinearLayout bubble=vertical();bubble.setPadding(dp(14),dp(11),dp(14),dp(12));bubble.setBackground(surface(PANEL,14));bubble.setVisibility(View.GONE);
         TextView status=text("",10,ACCENT),question=text("",12,MUTED),answer=text("",compact?13:14,INK);
         question.setPadding(0,dp(6),0,dp(4));question.setMaxLines(2);question.setEllipsize(TextUtils.TruncateAt.END);
@@ -576,42 +587,19 @@ public class MainActivity extends Activity {
         assistant=new Assistant(this,new Assistant.Host(){
             @Override public boolean configured(){return assistantReady();}
             @Override public Agent.Call call(List<Agent.Turn> history,String question,boolean allowSearch){
-                Agent.Provider provider=assistantProvider();boolean search=allowSearch&&assistantSearch(provider);
-                String system=Agent.systemPrompt(clock(System.currentTimeMillis(),"EEEE d MMMM yyyy, h:mm a"),assistantContext(),search);
-                return Agent.call(provider,store.preferences.getString("agent_base",""),store.preferences.getString("agent_model",provider.defaultModel),agentKey,system,history,question,search);
+                return agentSettings.call(history,question,allowSearch,assistantContext(),agentKey);
             }
             @Override public void openSettings(){showAssistantSettings();}
         },orb,bubble,status,question,answer);
     }
     /** Only what the user agreed to share: stop names, codes, live arrivals and favourite app names. */
+    /** Only what the user agreed to share; the launcher uses its cached arrivals (no extra LTA requests). */
     private String assistantContext(){
-        if(!store.preferences.getBoolean("agent_share",true))return "";
-        StringBuilder context=new StringBuilder();long now=System.currentTimeMillis();
-        if(store.stops.isEmpty())context.append("No bus stops are set up in BAY65.\n");
-        else if(apiKey==null)context.append("Live bus arrivals are off because LTA is not connected in BAY65 preferences.\n");
-        for(NookStore.Stop stop:store.stops){
-            ArrivalState state=arrivalStates.get(stop.code);
-            boolean fresh=apiKey!=null&&state!=null&&state.data!=null&&now-state.updated<=60_000L;
-            context.append("Bus stop \"").append(stop.name).append("\" (").append(stop.code).append(")");
-            if(!fresh){context.append(": no current arrival data for services ").append(String.join(", ",stop.services)).append(".\n");continue;}
-            context.append(", LTA data from ").append(clock(state.updated,"h:mm:ss a")).append(":\n");
-            Map<String,JSONObject> services=new HashMap<>();JSONArray all=state.data.optJSONArray("Services");
-            if(all!=null)for(int i=0;i<all.length();i++){JSONObject service=all.optJSONObject(i);if(service!=null)services.put(service.optString("ServiceNo"),service);}
-            for(String number:stop.services){
-                JSONObject service=services.get(number);List<String> buses=new ArrayList<>();
-                for(String next:new String[]{"NextBus","NextBus2","NextBus3"}){
-                    JSONObject bus=service==null?null:service.optJSONObject(next);if(bus==null)continue;
-                    String label=Rules.eta(bus.optString("EstimatedArrival"),bus.optInt("Monitored",1),now);if(label.equals("—"))continue;
-                    String load=Rules.occupancy(bus.optString("Load")).label;buses.add(label+(load.isEmpty()?"":" ("+load+")"));
-                }
-                context.append("- Bus ").append(number).append(": ").append(buses.isEmpty()?"no estimate":String.join(", then ",buses)).append("\n");
-            }
-        }
+        List<AssistantContext.Stop> stops=new ArrayList<>();
+        for(NookStore.Stop stop:store.stops){ArrivalState state=arrivalStates.get(stop.code);stops.add(new AssistantContext.Stop(stop.name,stop.code,stop.services,state==null?null:state.data,state==null?0:state.updated));}
         List<String> favourites=new ArrayList<>();for(AppRepository.Entry entry:apps.section(store,"favourites"))favourites.add(entry.label);
-        if(!favourites.isEmpty())context.append("Favourite apps on this TV: ").append(String.join(", ",favourites)).append(".\n");
         List<String> games=new ArrayList<>();for(AppRepository.Entry entry:apps.section(store,"playtime"))games.add(entry.label);
-        if(!games.isEmpty())context.append("Games in Playtime: ").append(String.join(", ",games)).append(".\n");
-        return context.toString().trim();
+        return AssistantContext.build(store.preferences.getBoolean("agent_share",true),apiKey!=null,stops,favourites,games,System.currentTimeMillis());
     }
     private void showAssistantSettings(){showAssistantSettings(null);}
     private void showAssistantSettings(Agent.Provider chosen){
@@ -667,7 +655,72 @@ public class MainActivity extends Activity {
                 catch(Exception unavailable){main.post(()->{save.setEnabled(true);status.setText("The key could not be securely saved. Please try again.");});}
             });
         });
-        if(saved!=null)page.addView(button("Turn off and remove saved key",()->{agentSecrets.clear();agentKey=null;store.preferences.edit().remove("agent_provider").remove("agent_model").remove("agent_base").apply();if(assistant!=null){assistant.reset();assistant.refresh();}message("BAY65 Assistant turned off");showAssistantSettings();}));
+        if(saved!=null)page.addView(button("Turn off and remove saved key",()->{agentSecrets.clear();agentKey=null;store.preferences.edit().remove("agent_provider").remove("agent_model").remove("agent_base").apply();if(assistant!=null){assistant.reset();assistant.refresh();}setEverywhere(false);message("BAY65 Assistant turned off");showAssistantSettings();}));
+        if(saved!=null){TextView everywhere=button("Everywhere Mode · "+(store.preferences.getBoolean(Everywhere.ENABLED,false)?"On":"Off"),this::showEverywhere);((LinearLayout.LayoutParams)everywhere.getLayoutParams()).topMargin=dp(16);page.addView(everywhere);}
         focusPage();
     }
+    private static final String EVERYWHERE_PENDING="everywhere_pending";
+    /** Turns Everywhere Mode on or off: the setting, the "Ask BAY65" app entry and the overlay service. */
+    private void setEverywhere(boolean on){
+        store.preferences.edit().putBoolean(Everywhere.ENABLED,on).remove(EVERYWHERE_PENDING).apply();
+        try{getPackageManager().setComponentEnabledSetting(new android.content.ComponentName(getPackageName(),"app.nook.tv.AskBay65"),on?android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED:android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED,android.content.pm.PackageManager.DONT_KILL_APP);}catch(RuntimeException unavailable){}
+        OrbOverlayService.sync(this);
+    }
+    /** Back from the system's "Display over other apps" screen: finish turning on if permission was given. */
+    private void finishEverywhereSetup(){
+        if(!store.preferences.getBoolean(EVERYWHERE_PENDING,false))return;
+        if(Settings.canDrawOverlays(this)){setEverywhere(true);message("Everywhere Mode is on");}
+        else{store.preferences.edit().remove(EVERYWHERE_PENDING).apply();message("Everywhere Mode needs permission to display over other apps.");}
+    }
+    private void showEverywhere(){
+        openPage("everywhere","Everywhere Mode");pageBack=this::showAssistantSettings;
+        boolean on=store.preferences.getBoolean(Everywhere.ENABLED,false),permitted=Settings.canDrawOverlays(this);
+        paragraph("Keep the BAY65 Assistant orb in a corner of the screen while you use other apps, such as YouTube or Netflix. The orb is display-only: it never takes the remote's focus, so navigation and playback work as usual.");
+        heading("Asking from another app");
+        paragraph("Android does not let apps use remote buttons while another app is open, so ask in one of these ways:\n• Say \"Hey Google, open Ask BAY65\" with the remote's Assistant button\n• Open Ask BAY65 from the TV's apps or notifications\n• Press Home and select the orb, as today\nA small BAY65 panel opens over the app; press Back to return. Some apps may pause while it is open.");
+        heading("Privacy");
+        paragraph("BAY65 never listens unless you ask, never reads or records other apps' screens, and makes no requests while idle. Bus arrivals are fetched only when you open Ask BAY65. Some apps can hide overlays; BAY65 respects that.");
+        if(!assistantReady()){paragraph("Set up the BAY65 Assistant first.");focusPage();return;}
+        if(on&&!permitted)paragraph("Permission to display over other apps was removed, so the orb is hidden. Turn Everywhere Mode on again to restore it.");
+        page.addView(button(on?"Turn off Everywhere Mode":"Turn on Everywhere Mode",()->{
+            if(on){setEverywhere(false);message("Everywhere Mode is off");showEverywhere();return;}
+            new AlertDialog.Builder(this).setTitle("Turn on Everywhere Mode?")
+                .setMessage("BAY65 will show its orb over other apps and keep an \"Ask BAY65\" notification while it runs. It needs Android's permission to display over other apps. The microphone is used only after you ask.")
+                .setNegativeButton("Cancel",null).setPositiveButton("Continue",(d,w)->enableEverywhere()).show();
+        }));
+        heading("Appearance");
+        Everywhere.Corner corner=Everywhere.corner(store.preferences.getString(Everywhere.CORNER,null));
+        Everywhere.Size size=Everywhere.size(store.preferences.getString(Everywhere.SIZE,null));
+        int opacity=Everywhere.opacity(store.preferences.getInt(Everywhere.OPACITY,Everywhere.DEFAULT_OPACITY));
+        page.addView(button("Orb position · "+corner.label,()->{Everywhere.Corner[] all=Everywhere.Corner.values();String[] labels=new String[all.length];for(int i=0;i<all.length;i++)labels[i]=all[i].label;
+            new AlertDialog.Builder(this).setTitle("Orb position").setSingleChoiceItems(labels,corner.ordinal(),(d,which)->{store.preferences.edit().putString(Everywhere.CORNER,all[which].name()).apply();d.dismiss();OrbOverlayService.sync(this);showEverywhere();}).setNegativeButton("Cancel",null).show();}));
+        page.addView(button("Orb size · "+size.label,()->{Everywhere.Size[] all=Everywhere.Size.values();String[] labels=new String[all.length];for(int i=0;i<all.length;i++)labels[i]=all[i].label;
+            new AlertDialog.Builder(this).setTitle("Orb size").setSingleChoiceItems(labels,size.ordinal(),(d,which)->{store.preferences.edit().putString(Everywhere.SIZE,all[which].name()).apply();d.dismiss();restartEverywhere();showEverywhere();}).setNegativeButton("Cancel",null).show();}));
+        page.addView(button("Idle opacity · "+opacity+"%",()->{String[] labels=new String[Everywhere.OPACITIES.length];int selected=0;for(int i=0;i<labels.length;i++){labels[i]=Everywhere.OPACITIES[i]+"%";if(Everywhere.OPACITIES[i]==opacity)selected=i;}
+            new AlertDialog.Builder(this).setTitle("Idle opacity").setSingleChoiceItems(labels,selected,(d,which)->{store.preferences.edit().putInt(Everywhere.OPACITY,Everywhere.OPACITIES[which]).apply();d.dismiss();showEverywhere();}).setNegativeButton("Cancel",null).show();}));
+        CheckBox dim=new CheckBox(this);dim.setText("Dim further after 30 seconds without assistant activity");dim.setTextColor(INK);dim.setTextSize(14);dim.setChecked(store.preferences.getBoolean(Everywhere.AUTO_DIM,true));dim.setPadding(0,dp(7),0,dp(7));
+        dim.setOnCheckedChangeListener((b,checked)->store.preferences.edit().putBoolean(Everywhere.AUTO_DIM,checked).apply());page.addView(dim);
+        CheckBox restore=new CheckBox(this);restore.setText("Restore the orb after the TV restarts");restore.setTextColor(INK);restore.setTextSize(14);restore.setChecked(store.preferences.getBoolean(Everywhere.RESTORE,true));restore.setPadding(0,dp(7),0,dp(7));
+        restore.setOnCheckedChangeListener((b,checked)->store.preferences.edit().putBoolean(Everywhere.RESTORE,checked).apply());page.addView(restore);
+        paragraph("The orb drifts a few pixels every 10 minutes and redraws slowly while idle, to protect OLED screens and keep playback smooth.");
+        heading("Excluded apps");
+        paragraph("Hiding the orb over chosen apps would need Android's Usage access permission to see which app is open. That is a sensitive permission, so it is not included. Turn Everywhere Mode off, or lower the idle opacity, for apps where you prefer no orb.");
+        focusPage();
+    }
+    /** Asks for the overlay permission (and notifications on Android 13+), then finishes in onResume. */
+    private void enableEverywhere(){
+        if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED)
+            requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS},45);
+        if(Settings.canDrawOverlays(this)){setEverywhere(true);message("Everywhere Mode is on");showEverywhere();return;}
+        store.preferences.edit().putBoolean(EVERYWHERE_PENDING,true).apply();
+        try{startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())));return;}catch(ActivityNotFoundException|SecurityException unavailable){}
+        store.preferences.edit().remove(EVERYWHERE_PENDING).apply();
+        openPage("everywhere-permission","Display over other apps");pageBack=this::showEverywhere;
+        paragraph("This TV has no settings screen for the \"Display over other apps\" permission, which Everywhere Mode needs. You can grant it once from a computer with Android's adb tool (nothing needs repeating):");
+        TextView command=text("adb shell appops set "+getPackageName()+" SYSTEM_ALERT_WINDOW allow",13,INK);command.setTypeface(Typeface.MONOSPACE);command.setPadding(0,dp(4),0,dp(12));command.setTextIsSelectable(true);page.addView(command);
+        paragraph("Then return here and turn Everywhere Mode on again. To remove it later, turn Everywhere Mode off, or run the same command with deny.");
+        focusPage();
+    }
+    /** Size changes need a new overlay window. */
+    private void restartEverywhere(){stopService(new Intent(this,OrbOverlayService.class));OrbOverlayService.sync(this);}
 }

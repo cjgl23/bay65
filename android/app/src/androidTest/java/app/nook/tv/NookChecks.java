@@ -67,6 +67,13 @@ public final class NookChecks extends Instrumentation {
             }
             String savedStops=context.getSharedPreferences("nook",Context.MODE_PRIVATE).getString("stops","[]");
             check((context.getApplicationInfo().flags&ApplicationInfo.FLAG_ALLOW_BACKUP)==0,"Cloud backup must be disabled");
+            // Everywhere Mode: internal components are not exposed, and "Ask BAY65" stays hidden until turned on.
+            android.content.pm.PackageManager pm=context.getPackageManager();
+            check(!pm.getActivityInfo(new android.content.ComponentName(context,AssistantActivity.class),0).exported,"Assistant panel must not be exported");
+            check(!pm.getServiceInfo(new android.content.ComponentName(context,OrbOverlayService.class),0).exported,"Overlay service must not be exported");
+            check(!pm.getReceiverInfo(new android.content.ComponentName(context,EverywhereBootReceiver.class),0).exported,"Restart receiver must not be exported");
+            if(!context.getSharedPreferences("nook",Context.MODE_PRIVATE).getBoolean(Everywhere.ENABLED,false))
+                check(pm.getComponentEnabledSetting(new android.content.ComponentName(context.getPackageName(),"app.nook.tv.AskBay65"))!=android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED,"Ask BAY65 must stay hidden until Everywhere Mode is on");
             SecretStore secret=new SecretStore(context);String savedKey=secret.read();boolean testSecret=savedKey==null;
             if(testSecret){String dummy="dummy-instrumentation-key";try{secret.save(dummy);check(dummy.equals(secret.read()),"Encrypted key must survive a read");String stored=context.getSharedPreferences("nook_secret",Context.MODE_PRIVATE).getString("encrypted","");check(!stored.contains(dummy),"Preferences must not store the plaintext key");}finally{secret.clear();}}
             NookStore store=new NookStore(context);

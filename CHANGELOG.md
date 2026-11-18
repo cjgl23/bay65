@@ -4,6 +4,7 @@ This records released source versions and significant changes. It does not imply
 
 ## Unreleased
 
+- Fix: pressing the orb could keep opening the TV's system voice screen ("Ask BAY65" bar at the top) instead of listening in BAY65. The voice fallback no longer remembers anything between presses, silence shows "I didn't hear anything" instead of opening the system screen, and the stuck setting from 0.3.0 is cleared on start.
 - Fix duplicate orbs when returning from another app: track visible launcher and panel instances separately, so a stopped app-task instance cannot clear the Home task’s visibility.
 
 - Make the overlay orb fully opaque by default with automatic dimming off; opacity and dimming remain adjustable.

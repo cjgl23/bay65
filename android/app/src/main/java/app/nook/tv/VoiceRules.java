@@ -18,8 +18,8 @@ public final class VoiceRules {
 
     /**
      * What to do after an in-app recognition error. Errors that mean the recogniser or its audio never
-     * worked (common when a TV's only microphone is in the remote) hand over to the system voice screen,
-     * which can open the remote's microphone itself. A timeout with no sound at all means the same.
+     * worked (common when a TV's only microphone is in the remote) hand over to the system voice screen
+     * for that press, which can open the remote's microphone itself. Nothing is remembered between presses.
      */
     public static Next afterError(int error, boolean heardSound) {
         switch (error) {
@@ -27,20 +27,11 @@ public final class VoiceRules {
             case ERROR_SERVER_DISCONNECTED: case ERROR_INSUFFICIENT_PERMISSIONS:
                 return Next.SYSTEM_VOICE;
             case ERROR_SPEECH_TIMEOUT: case ERROR_NO_MATCH:
-                return heardSound ? Next.RETRY_MESSAGE : Next.SYSTEM_VOICE;
+                // Silence usually means nobody spoke; opening the system screen then is a surprise.
+                return Next.RETRY_MESSAGE;
             default:
                 return Next.UNAVAILABLE;
         }
-    }
-
-    /**
-     * Whether to go straight to the system voice screen on later presses: only when the microphone
-     * itself seems unusable in-app, not for transient faults such as a busy recogniser. A silent press
-     * may just mean nobody spoke, so it takes two silent presses in a row (silentStreak counts this one).
-     */
-    public static boolean rememberSystemVoice(int error, boolean heardSound, int silentStreak) {
-        if (error == ERROR_AUDIO || error == ERROR_INSUFFICIENT_PERMISSIONS) return true;
-        return (error == ERROR_SPEECH_TIMEOUT || error == ERROR_NO_MATCH) && !heardSound && silentStreak >= 2;
     }
 
     /** Errors after which a cached SpeechRecognizer should be destroyed and created afresh next time. */

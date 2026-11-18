@@ -6,7 +6,7 @@ A native, remote-first home screen for Android TV 8.0 or newer. BAY65 runs indep
 
 - Open BAY65 from your current launcher's app list.
 - Use the network icon beside the gear to open the TV's native network settings.
-- Open Settings for All apps, Manage favourites, BAY65 preferences, Android settings, Bluetooth/remotes, accessibility, launcher selection, and About BAY65.
+- Open Settings for All apps, Manage favourites, BAY65 preferences, BAY65 Assistant, Android settings, Bluetooth/remotes, accessibility, launcher selection, and About BAY65.
 - In BAY65 preferences, connect your own DataMall API Access Key and add your own bus stops and services. You can search LTA's public stop directory or enter details manually.
 - Left and Right controls reorder bus stops. Native bus cards share a row and grow into unused space above favourites without moving the app shelf. Service lists scroll when their content exceeds available height; narrow layouts may require horizontal scrolling.
 - Manage favourites changes app placement and order. Home tiles show artwork from the installed apps without visible app-name labels. Artwork is clipped to rounded corners; the focus ring switches between dark green on light artwork and pale green on dark artwork. App names remain available to accessibility services and in Settings.
@@ -18,13 +18,34 @@ BAY65 suggests the supported streaming/music favourites and the recognised games
 There are **no preconfigured stops, services, account keys, imported photos, or personal settings** in the APK. Settings from a developer's browser or TV are never copied into a build.
 
 - Keys are encrypted with an AES-GCM key held by Android Keystore and stored in app-private preferences. Key entry is masked, cleared on submission, excluded from autofill, and protected against screenshots while the connection page is open.
-- HTTPS requests go directly to LTA's fixed endpoints with certificate verification and redirects disabled. Credentials are never put in URLs or logged.
+- HTTPS requests go directly to LTA's fixed endpoints with certificate verification and redirects disabled. Credentials are never put in URLs or logged. The optional assistant uses the same rules for the AI provider you choose.
 - Stops, preferences, and imported photo copies remain in private app storage. Cloud backup and device-transfer extraction are disabled. There are no analytics, advertising, account sign-in, or embedded HTTP services.
 - Arrivals refresh every 20 seconds while the app is visible. Polling pauses when it leaves the foreground; the TV's normal screensaver remains available.
 - `—` means no estimate. `~` indicates a scheduled estimate. Missing/stale data never becomes a sample arrival time, and missing estimates are not labelled as “not in operation.”
 - Uninstalling BAY65 or clearing its data removes the saved stops, encrypted key, and imported photo copies. The original source images are unchanged.
 
 Operating-hour validation is not included in this version. Service suggestions show services currently reporting arrivals; services can also be entered manually.
+
+## BAY65 Assistant (optional)
+
+A floating voice orb in the bottom-right corner of the home screen, ported from the Rupert AI presence orb. It is off until you set it up in Settings → BAY65 Assistant.
+
+- **Talk:** select the orb and press OK, or press the remote's search button. **Type:** hold OK on the orb. Press OK again or Back to stop.
+- **Colour shows state:** calm blue when idle, teal while listening, amber while thinking or speaking. The orb pulses with your voice and with each spoken word, and stays still when the TV's animations are turned off.
+- **Voice is free and on the TV:** listening uses Android's speech recogniser and replies use the TV's built-in text-to-speech. No voice API key is needed. If in-app listening is unavailable, BAY65 falls back to the system voice screen, then to typing. Microphone permission is requested only the first time you talk.
+- **Answers come from a free provider you choose**, all through the same OpenAI-compatible request:
+
+| Provider | Default model (editable) | Key |
+|---|---|---|
+| Google Gemini free tier | `gemini-flash-latest` | Free from aistudio.google.com/apikey |
+| Groq free tier | `llama-3.3-70b-versatile` | Free from console.groq.com/keys |
+| OpenRouter free models | `meta-llama/llama-3.3-70b-instruct:free` | Free from openrouter.ai/keys |
+| Ollama or another OpenAI-compatible server | `llama3.2` | Optional; the server must use `https://` |
+
+- Keys are tested before saving, encrypted with Android Keystore, masked on entry and protected against screenshots, like the LTA key. Free tiers have rate limits and some providers may use free-tier prompts to improve their models.
+- With **Include my bus stops, live arrivals and favourite app names** on (the default), each question includes your stop names and codes, the current arrival estimates and your favourite app names, so you can ask "When is my next 10?". Turn it off to send only your question and the time. The assistant is told never to invent arrival times.
+- BAY65 does not send unencrypted traffic, so Ollama on your home network needs an HTTPS front end such as Tailscale Serve or a reverse proxy.
+- Conversation history (last six exchanges) is kept in memory only. **Turn off and remove saved key** clears the provider settings and key.
 
 ## Photos
 

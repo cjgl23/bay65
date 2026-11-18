@@ -91,6 +91,10 @@ public class MainActivity extends Activity {
     private ConnectivityManager connectivity;
     private boolean observingNetwork;
     private String apiKey;
+    private SecretStore agentSecrets;
+    private String agentKey;
+    private Assistant assistant;
+    private final AgentClient agentClient=new AgentClient();
     private TextView dialogBack;
     private Runnable pageBack=this::showSettingsMenu;
 
@@ -139,7 +143,7 @@ public class MainActivity extends Activity {
         super.onCreate(state);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-        store=new NookStore(this);secrets=new SecretStore(this);apiKey=secrets.read();apps=new AppRepository(this);photoManager=new PhotoManager(this,store);
+        store=new NookStore(this);secrets=new SecretStore(this);apiKey=secrets.read();agentSecrets=new SecretStore(this,"nook_agent_secret","nook.agent.v1");agentKey=agentSecrets.read();apps=new AppRepository(this);photoManager=new PhotoManager(this,store);
         connectivity=(ConnectivityManager)getSystemService(CONNECTIVITY_SERVICE);
         compact=getResources().getDisplayMetrics().heightPixels/getResources().getDisplayMetrics().density<600;
         apps.refresh(store);buildHome();
@@ -159,15 +163,26 @@ public class MainActivity extends Activity {
         }
     }
     @Override protected void onStop(){
+        if(assistant!=null)assistant.stop();
         active=false;lifecycle++;main.removeCallbacks(tick);main.removeCallbacks(poll);main.removeCallbacks(photoTick);
         if(observingNetwork){try{connectivity.unregisterNetworkCallback(networkCallback);}catch(RuntimeException ignored){}observingNetwork=false;}
         super.onStop();
     }
     @Override protected void onDestroy(){
-        main.removeCallbacksAndMessages(null);io.shutdownNow();if(settingsDialog!=null)settingsDialog.dismiss();super.onDestroy();
+        if(assistant!=null)assistant.release();main.removeCallbacksAndMessages(null);io.shutdownNow();if(settingsDialog!=null)settingsDialog.dismiss();super.onDestroy();
+    }
+    @Override public boolean onKeyDown(int keyCode,KeyEvent event){
+        // The remote's search key talks to the assistant; the Assistant button stays with the system.
+        if(keyCode==KeyEvent.KEYCODE_SEARCH&&assistant!=null&&(settingsDialog==null||!settingsDialog.isShowing())){if(event.getRepeatCount()==0)assistant.activate();return true;}
+        return super.onKeyDown(keyCode,event);
+    }
+    @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){
+        super.onRequestPermissionsResult(request,permissions,results);
+        if(request==Assistant.PERMISSION_REQUEST&&assistant!=null)assistant.onPermission(results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED);
     }
     @Override public void onBackPressed(){
         if(settingsDialog!=null&&settingsDialog.isShowing()){if(!settingsPage.equals("menu"))showSettingsMenu();else settingsDialog.dismiss();return;}
+        if(assistant!=null&&assistant.bubbleShown()){assistant.dismiss();return;}
         View first=favouritesRow.getChildCount()>0?favouritesRow.getChildAt(0):networkButton;first.requestFocus();
     }
     private int dp(float n){return Math.round(n*getResources().getDisplayMetrics().density);}
@@ -205,6 +220,7 @@ public class MainActivity extends Activity {
         TextView favouriteHeading=text("Your favourites",compact?12:15,INK);favouriteHeading.setPadding(0,dp(8),0,dp(9));content.addView(favouriteHeading);
         HorizontalScrollView favourites=new ShelfScrollView(this);favourites.setClipToPadding(false);favourites.setHorizontalScrollBarEnabled(false);favouritesRow=horizontal();favourites.addView(favouritesRow,new HorizontalScrollView.LayoutParams(-2,-2));content.addView(favourites,new LinearLayout.LayoutParams(-1,dp(compact?102:140)));
         HorizontalScrollView games=new ShelfScrollView(this);games.setHorizontalScrollBarEnabled(false);playtimeRow=horizontal();games.addView(playtimeRow);LinearLayout.LayoutParams gamesParams=new LinearLayout.LayoutParams(-1,dp(48));gamesParams.topMargin=dp(12);content.addView(games,gamesParams);
+        buildAssistant();
         setContentView(root);renderBusCards();renderApps();refreshNetwork();
     }
     private ImageView iconButton(String label,Runnable action){ImageView button=new ImageView(this);button.setContentDescription(label);button.setPadding(dp(8),dp(8),dp(8),dp(8));focusable(button,30);button.setOnClickListener(v->action.run());button.setLayoutParams(new LinearLayout.LayoutParams(dp(38),dp(38)));return button;}
@@ -341,7 +357,7 @@ public class MainActivity extends Activity {
     private void focusPage(){main.post(()->{if(settingsDialog!=null&&settingsDialog.isShowing()){List<View> choices=page.getFocusables(View.FOCUS_FORWARD);if(!choices.isEmpty())choices.get(0).requestFocus();}});}
     private void showSettingsMenu(){
         openPage("menu","Settings");heading("Apps & home");
-        page.addView(button("All apps",this::showAllApps));page.addView(button("Manage favourites",this::showManageApps));page.addView(button("BAY65 preferences",this::showPreferences));
+        page.addView(button("All apps",this::showAllApps));page.addView(button("Manage favourites",this::showManageApps));page.addView(button("BAY65 preferences",this::showPreferences));page.addView(button("BAY65 Assistant · "+(assistantReady()?"On":"Set up"),this::showAssistantSettings));
         heading("TV & system");
         page.addView(button("Network settings · "+networkDescription,()->openSystem(Settings.ACTION_WIFI_SETTINGS,Settings.ACTION_WIRELESS_SETTINGS,Settings.ACTION_SETTINGS)));
         page.addView(button("Android settings",()->openSystem(Settings.ACTION_SETTINGS)));
@@ -506,7 +522,7 @@ public class MainActivity extends Activity {
                 }).show();
     }
     @Override protected void onActivityResult(int request,int result,Intent data){
-        super.onActivityResult(request,result,data);if(request!=PHOTO_REQUEST||result!=RESULT_OK||data==null)return;
+        super.onActivityResult(request,result,data);if(request==Assistant.VOICE_REQUEST){if(assistant!=null)assistant.onVoiceResult(result,data);return;}if(request!=PHOTO_REQUEST||result!=RESULT_OK||data==null)return;
         List<Uri> selected=new ArrayList<>();ClipData clips=data.getClipData();if(clips!=null){for(int i=0;i<clips.getItemCount();i++)selected.add(clips.getItemAt(i).getUri());}else if(data.getData()!=null)selected.add(data.getData());
         if(selected.isEmpty())return;final int existing=store.photos.size();message("Importing selected photos…");
         io.execute(()->{PhotoManager.ImportResult imported=photoManager.importFiles(selected,existing);main.post(()->{
@@ -539,6 +555,105 @@ public class MainActivity extends Activity {
         paragraph("Licence: https://datamall.lta.gov.sg/content/datamall/en/SingaporeOpenDataLicence.html");
         page.addView(button("Singapore Open Data Licence",()->openExternal("https://datamall.lta.gov.sg/content/datamall/en/SingaporeOpenDataLicence.html")));
         page.addView(button("LTA API terms",()->openExternal("https://datamall.lta.gov.sg/content/datamall/en/api-terms-of-service.html")));
-        heading("Privacy");paragraph("Stops, photos, and the encrypted key are stored privately on this TV. Your key and requested stop codes are sent directly to LTA over HTTPS. Photos are not uploaded by BAY65. No analytics, advertising, account sign-in, or cloud backup. Disconnect to remove the key, or uninstall BAY65 to remove its private data.");focusPage();
+        heading("Privacy");paragraph("Stops, photos, and the encrypted keys are stored privately on this TV. Your key and requested stop codes are sent directly to LTA over HTTPS. If you set up the BAY65 Assistant, your questions and, if you allow it, your stop names, arrivals and favourite app names are sent over HTTPS to the AI provider you chose; speech is handled by this TV's speech services. Photos are not uploaded by BAY65. No analytics, advertising, account sign-in, or cloud backup. Disconnect to remove the key, or uninstall BAY65 to remove its private data.");focusPage();
+    }
+
+    private Agent.Provider assistantProvider(){String id=store.preferences.getString("agent_provider",null);return id==null?null:Agent.provider(id);}
+    private boolean assistantReady(){Agent.Provider provider=assistantProvider();return provider!=null&&(agentKey!=null||!provider.keyRequired);}
+    /** The floating orb sits in the bottom-right corner; its transcript bubble opens to its left. */
+    private void buildAssistant(){
+        LinearLayout dock=horizontal();dock.setGravity(Gravity.BOTTOM|Gravity.END);
+        LinearLayout bubble=vertical();bubble.setPadding(dp(14),dp(11),dp(14),dp(12));bubble.setBackground(surface(PANEL,14));bubble.setVisibility(View.GONE);
+        TextView status=text("",10,ACCENT),question=text("",12,MUTED),answer=text("",compact?13:14,INK);
+        question.setPadding(0,dp(6),0,dp(4));question.setMaxLines(2);question.setEllipsize(TextUtils.TruncateAt.END);
+        answer.setLineSpacing(dp(2),1);answer.setMaxLines(compact?6:8);answer.setEllipsize(TextUtils.TruncateAt.END);answer.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+        bubble.addView(status);bubble.addView(question);bubble.addView(answer);
+        LinearLayout.LayoutParams bubbleParams=new LinearLayout.LayoutParams(dp(compact?300:380),-2);bubbleParams.rightMargin=dp(10);bubbleParams.bottomMargin=dp(12);dock.addView(bubble,bubbleParams);
+        OrbView orb=new OrbView(this);orb.setTag("assistant-orb");orb.setFocusable(true);orb.setClickable(true);orb.setLongClickable(true);
+        int size=dp(compact?64:80);dock.addView(orb,new LinearLayout.LayoutParams(size,size));
+        FrameLayout.LayoutParams params=new FrameLayout.LayoutParams(-2,-2,Gravity.BOTTOM|Gravity.END);params.rightMargin=dp(14);params.bottomMargin=dp(8);root.addView(dock,params);
+        assistant=new Assistant(this,new Assistant.Host(){
+            @Override public boolean configured(){return assistantReady();}
+            @Override public String endpoint(){Agent.Provider provider=assistantProvider();return Agent.endpoint(provider,store.preferences.getString("agent_base",""));}
+            @Override public String model(){return Agent.model(store.preferences.getString("agent_model",assistantProvider().defaultModel));}
+            @Override public String key(){return agentKey;}
+            @Override public String context(){return assistantContext();}
+            @Override public String now(){return clock(System.currentTimeMillis(),"EEEE d MMMM yyyy, h:mm a");}
+            @Override public void openSettings(){showAssistantSettings();}
+        },io,orb,bubble,status,question,answer);
+    }
+    /** Only what the user agreed to share: stop names, codes, live arrivals and favourite app names. */
+    private String assistantContext(){
+        if(!store.preferences.getBoolean("agent_share",true))return "";
+        StringBuilder context=new StringBuilder();long now=System.currentTimeMillis();
+        if(store.stops.isEmpty())context.append("No bus stops are set up in BAY65.\n");
+        else if(apiKey==null)context.append("Live bus arrivals are off because LTA is not connected in BAY65 preferences.\n");
+        for(NookStore.Stop stop:store.stops){
+            ArrivalState state=arrivalStates.get(stop.code);
+            boolean fresh=apiKey!=null&&state!=null&&state.data!=null&&now-state.updated<=60_000L;
+            context.append("Bus stop \"").append(stop.name).append("\" (").append(stop.code).append(")");
+            if(!fresh){context.append(": no current arrival data for services ").append(String.join(", ",stop.services)).append(".\n");continue;}
+            context.append(", LTA data from ").append(clock(state.updated,"h:mm:ss a")).append(":\n");
+            Map<String,JSONObject> services=new HashMap<>();JSONArray all=state.data.optJSONArray("Services");
+            if(all!=null)for(int i=0;i<all.length();i++){JSONObject service=all.optJSONObject(i);if(service!=null)services.put(service.optString("ServiceNo"),service);}
+            for(String number:stop.services){
+                JSONObject service=services.get(number);List<String> buses=new ArrayList<>();
+                for(String next:new String[]{"NextBus","NextBus2","NextBus3"}){
+                    JSONObject bus=service==null?null:service.optJSONObject(next);if(bus==null)continue;
+                    String label=Rules.eta(bus.optString("EstimatedArrival"),bus.optInt("Monitored",1),now);if(label.equals("—"))continue;
+                    String load=Rules.occupancy(bus.optString("Load")).label;buses.add(label+(load.isEmpty()?"":" ("+load+")"));
+                }
+                context.append("- Bus ").append(number).append(": ").append(buses.isEmpty()?"no estimate":String.join(", then ",buses)).append("\n");
+            }
+        }
+        List<String> favourites=new ArrayList<>();for(AppRepository.Entry entry:apps.section(store,"favourites"))favourites.add(entry.label);
+        if(!favourites.isEmpty())context.append("Favourite apps on this TV: ").append(String.join(", ",favourites)).append(".\n");
+        return context.toString().trim();
+    }
+    private void showAssistantSettings(){showAssistantSettings(null);}
+    private void showAssistantSettings(Agent.Provider chosen){
+        openPage("assistant","BAY65 Assistant");Window window=settingsDialog.getWindow();if(window!=null)window.addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        Agent.Provider saved=assistantProvider(),provider=chosen!=null?chosen:saved!=null?saved:Agent.Provider.GEMINI;
+        paragraph("A floating voice assistant on the home screen. Select the orb and press OK to talk, hold OK to type, or press the remote's search button. Ask about your buses or anything else.");
+        paragraph("Listening and the spoken reply use this TV's built-in speech services at no cost. Answers come from the free AI provider you choose; free tiers have rate limits, and some providers may use free-tier prompts to improve their models.");
+        TextView current=text(saved==null?"Not set up":"Using "+saved.label+(agentKey!=null?" · key saved encrypted on this TV":""),13,MUTED);current.setPadding(0,0,0,dp(12));page.addView(current);
+        page.addView(button("Provider · "+provider.label,()->{
+            Agent.Provider[] all=Agent.Provider.values();String[] labels=new String[all.length];for(int i=0;i<all.length;i++)labels[i]=all[i].label;
+            new AlertDialog.Builder(this).setTitle("Choose a free provider").setSingleChoiceItems(labels,provider.ordinal(),(d,which)->{d.dismiss();showAssistantSettings(all[which]);}).setNegativeButton("Cancel",null).show();
+        }));
+        if(provider.keyPage!=null)paragraph("Create a free API key at "+provider.keyPage+" on a phone or computer, then type it below. BAY65 tests it and stores it encrypted using Android Keystore.");
+        else paragraph("Enter your server's https:// address, ending in /v1. For Ollama on your network, put it behind HTTPS (for example Tailscale Serve or a reverse proxy): BAY65 does not send unencrypted traffic. Leave the key blank if your server needs none.");
+        EditText base=provider==Agent.Provider.CUSTOM?field("Server address",store.preferences.getString("agent_base",""),InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_URI):null;
+        EditText model=field("Model",provider==saved?store.preferences.getString("agent_model",provider.defaultModel):provider.defaultModel,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        boolean keepKey=provider==saved&&agentKey!=null;
+        EditText key=field(keepKey?"New API key (leave blank to keep the saved key)":provider.keyRequired?"API key":"API key (optional)","",InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        key.setAutofillHints((String[])null);key.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS);
+        CheckBox share=new CheckBox(this);share.setText("Include my bus stops, live arrivals and favourite app names in questions");share.setTextColor(INK);share.setTextSize(14);share.setChecked(store.preferences.getBoolean("agent_share",true));share.setPadding(0,dp(7),0,dp(7));
+        share.setOnCheckedChangeListener((b,checked)->store.preferences.edit().putBoolean("agent_share",checked).apply());page.addView(share);
+        TextView status=text("",13,MUTED);status.setPadding(0,dp(8),0,dp(12));page.addView(status);
+        TextView save=button("Save and test",()->{});page.addView(save);
+        save.setOnClickListener(v->{
+            final String endpoint,modelName,candidate=key.getText().toString().trim();key.setText("");
+            try{endpoint=Agent.endpoint(provider,base==null?"":base.getText().toString());modelName=Agent.model(model.getText().toString());}
+            catch(IllegalArgumentException invalid){status.setText(invalid.getMessage());return;}
+            final String useKey=candidate.isEmpty()&&keepKey?agentKey:candidate;
+            if(!Agent.validKey(useKey,provider.keyRequired)){status.setText("Enter a valid API key from "+provider.keyPage+".");return;}
+            save.setEnabled(false);status.setText("Testing "+provider.label+"…");
+            io.execute(()->{
+                try{
+                    agentClient.ask(endpoint,useKey,Agent.requestBody(modelName,"Reply with the single word OK.",new ArrayList<>(),"Connection test"));
+                    if(useKey.isEmpty())agentSecrets.clear();else agentSecrets.save(useKey);
+                    main.post(()->{
+                        store.preferences.edit().putString("agent_provider",provider.id).putString("agent_model",modelName).putString("agent_base",base==null?"":base.getText().toString().trim()).apply();
+                        agentKey=useKey.isEmpty()?null:useKey;if(assistant!=null){assistant.stop();assistant.refresh();}
+                        save.setEnabled(true);status.setText("Connected. Close Settings, select the orb and press OK to talk.");message("BAY65 Assistant is on");
+                    });
+                }
+                catch(AgentClient.Failure failure){main.post(()->{save.setEnabled(true);status.setText(failure.getMessage());});}
+                catch(Exception unavailable){main.post(()->{save.setEnabled(true);status.setText("The key could not be securely saved. Please try again.");});}
+            });
+        });
+        if(saved!=null)page.addView(button("Turn off and remove saved key",()->{agentSecrets.clear();agentKey=null;store.preferences.edit().remove("agent_provider").remove("agent_model").remove("agent_base").apply();if(assistant!=null){assistant.dismiss();assistant.refresh();}message("BAY65 Assistant turned off");showAssistantSettings();}));
+        focusPage();
     }
 }

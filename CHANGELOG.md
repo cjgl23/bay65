@@ -2,6 +2,12 @@
 
 This records released source versions and significant changes. It does not imply public APK availability.
 
+## Unreleased
+
+- Add the optional BAY65 Assistant: a floating, state-coloured voice orb ported from Rupert AI, using the TV's free speech recogniser and text-to-speech, with Google Gemini, Groq, OpenRouter or an HTTPS OpenAI-compatible server (such as Ollama) for answers.
+- Encrypt the assistant key with Android Keystore; share stops, live arrivals and favourite app names only while the opt-out setting is on.
+- Request microphone permission only on first use; fall back to the system voice screen or typing.
+
 ## 0.2.2 — 15 November 2026
 
 - Restore standard system audio for vertical Settings navigation while keeping scrollbars hidden.

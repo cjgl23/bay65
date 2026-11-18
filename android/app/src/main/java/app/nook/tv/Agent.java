@@ -69,6 +69,20 @@ public final class Agent {
         return model;
     }
 
+    /**
+     * Whether a blank key field may reuse the saved key: only for the same provider and, for a custom
+     * server, the same address, so a saved key is never sent to a different host.
+     */
+    public static boolean reuseSavedKey(Provider provider, Provider saved, String savedBase, String newBase) {
+        if (provider != saved) return false;
+        if (provider != Provider.CUSTOM) return true;
+        return normalisedBase(savedBase).equals(normalisedBase(newBase));
+    }
+
+    private static String normalisedBase(String base) {
+        return base == null ? "" : base.trim().replaceAll("/+$", "").toLowerCase(Locale.ROOT);
+    }
+
     /** Same printable-ASCII rule as the LTA key. Blank is allowed only when the provider needs no key. */
     public static boolean validKey(String key, boolean required) {
         if (key == null || key.isEmpty()) return !required;
@@ -130,9 +144,11 @@ public final class Agent {
             for (Turn turn : history) messages.put(new JSONObject().put("role", turn.role).put("content", turn.text));
             messages.put(new JSONObject().put("role", "user").put("content", question));
             return new JSONObject().put("model", model).put("messages", messages)
-                    .put("max_tokens", 400).put("temperature", 0.4).put("stream", false).toString();
+                    .put("max_tokens", GEMINI_MAX_TOKENS).put("temperature", 0.4).put("stream", false).toString();
         } catch (JSONException impossible) { throw new IllegalStateException(impossible); }
     }
+
+    static final int GEMINI_MAX_TOKENS = 1024;
 
     /** Gemini's native request. History roles map to user and model; search adds the google_search tool. */
     public static String geminiBody(String system, List<Turn> history, String question, boolean search) {
@@ -143,7 +159,10 @@ public final class Agent {
             JSONObject body = new JSONObject()
                     .put("systemInstruction", new JSONObject().put("parts", new JSONArray().put(new JSONObject().put("text", system))))
                     .put("contents", contents)
-                    .put("generationConfig", new JSONObject().put("maxOutputTokens", 400).put("temperature", 0.4));
+                    // Room for a short answer plus any thinking the model does; Gemini's own default temperature
+                    // is kept, as Google advises for current models. No thinkingConfig: its field differs
+                    // between Gemini generations and a wrong one is rejected.
+                    .put("generationConfig", new JSONObject().put("maxOutputTokens", GEMINI_MAX_TOKENS));
             if (search) body.put("tools", new JSONArray().put(new JSONObject().put("google_search", new JSONObject())));
             return body.toString();
         } catch (JSONException impossible) { throw new IllegalStateException(impossible); }
@@ -164,12 +183,15 @@ public final class Agent {
                 JSONObject part = parts.optJSONObject(i);
                 if (part != null && !part.optBoolean("thought")) text.append(part.optString("text", ""));
             }
-            String answer = text.toString().trim();
+            String answer = text.toString().trim(), reason = candidate.optString("finishReason", "");
             if (answer.isEmpty()) {
-                String reason = candidate.optString("finishReason", "");
                 throw new IllegalArgumentException(reason.equals("SAFETY") || reason.equals("PROHIBITED_CONTENT")
-                        ? "Gemini declined to answer that question." : "The assistant returned an empty answer. Try again.");
+                        ? "Gemini declined to answer that question."
+                        : reason.equals("MAX_TOKENS") ? "The answer ran out of room. Try a shorter or simpler question."
+                        : "The assistant returned an empty answer. Try again.");
             }
+            // A cut-off answer is still useful; say so rather than reading half a sentence as if complete.
+            if (reason.equals("MAX_TOKENS")) answer = answer + "…";
             java.util.LinkedHashSet<String> sources = new java.util.LinkedHashSet<>();
             JSONObject grounding = candidate.optJSONObject("groundingMetadata");
             JSONArray chunks = grounding == null ? null : grounding.optJSONArray("groundingChunks");

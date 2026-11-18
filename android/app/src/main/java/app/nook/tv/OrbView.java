@@ -51,6 +51,8 @@ final class OrbView extends View {
     private Mode mode = Mode.QUIET;
     private Config current = config(Mode.QUIET);
     private float level, target;
+    /** Drawn over other apps: idles at a gentle 5 fps and never shows a focus ring. */
+    private boolean ambient;
     private long last = SystemClock.uptimeMillis();
     private Shader vignette, bloom, glass, core;
     private Config shaded;
@@ -75,6 +77,18 @@ final class OrbView extends View {
         }
         setWillNotDraw(false);
     }
+
+    /** The orb colour for an assistant state, shared by the launcher, the panel and the overlay. */
+    static Mode forState(String state) {
+        switch (state == null ? "" : state) {
+            case "LISTENING": return Mode.MIC;
+            case "THINKING": return Mode.SHIMMER;
+            case "SPEAKING": return Mode.SPEECH;
+            default: return Mode.QUIET;
+        }
+    }
+
+    void setAmbient(boolean value) { ambient = value; invalidate(); }
 
     void setMode(Mode next) {
         if (next == mode) return;
@@ -190,7 +204,8 @@ final class OrbView extends View {
 
         if (isFocused()) ring(canvas, cx, cy, size * .47f, 2 * density, 0xffffff, .9f);
         if (isShown() && !(reduceMotion && mode == Mode.QUIET && level < .01f)) {
-            long delay = VoiceRules.orbFrameDelay(mode == Mode.QUIET, isFocused(), level);
+            long delay = ambient ? Everywhere.overlayFrameDelay(mode == Mode.QUIET, level)
+                    : VoiceRules.orbFrameDelay(mode == Mode.QUIET, isFocused(), level);
             if (delay == 0) postInvalidateOnAnimation(); else postInvalidateDelayed(delay);
         }
     }

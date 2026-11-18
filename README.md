@@ -17,7 +17,7 @@ A remote-first Android TV launcher that brings live Singapore bus arrivals, favo
 - **BAY65 Transit:** up to four configurable stops and eight services per stop, three independently colour-coded arrival estimates, 20-second foreground refresh, stale-data handling, adaptive card sizing and LTA stop-directory lookup.
 - **BAY65 Memories:** private photo import, configurable display fit and slideshow intervals.
 - **Remote-first home:** installed-app discovery, favourites and Playtime organisation, D-pad navigation, system navigation sounds and device-dependent settings shortcuts.
-- **BAY65 Assistant (optional):** a floating voice orb that answers questions about your buses, your favourite apps (with Gemini web search for current releases and charts) and more, using free AI providers (Google Gemini, Groq, OpenRouter or your own Ollama server) and the TV's built-in speech. See [Android setup](android/README.md#bay65-assistant-optional).
+- **BAY65 Assistant (optional):** a floating voice orb that answers questions about your buses, your favourite apps (with Gemini web search for current releases and charts) and more, using free AI providers (Google Gemini, Groq, OpenRouter or your own Ollama server) and the TV's built-in speech. See [Android setup](android/README.md#bay65-assistant-optional). Optional [Everywhere Mode](android/EVERYWHERE.md) keeps the orb available over other apps.
 - **Local-first privacy:** encrypted LTA key storage using Android Keystore, app-private settings and photos, no analytics or cloud accounts.
 
 ## Engineering approach

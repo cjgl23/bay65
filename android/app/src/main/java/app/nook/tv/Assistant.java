@@ -56,7 +56,8 @@ final class Assistant {
     private final TextView status, question, answer;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final AgentClient client = new AgentClient();
-    private final List<Agent.Turn> history = new ArrayList<>();
+    /** Shared with every assistant surface, so a conversation can continue from the launcher to the panel. */
+    private final List<Agent.Turn> history = AssistantPresence.history;
     private SpeechRecognizer recognizer;
     private TextToSpeech tts;
     private boolean ttsReady;
@@ -91,7 +92,7 @@ final class Assistant {
         client.cancel();
         if (recognizer != null) recognizer.cancel();
         if (tts != null) tts.stop();
-        orb.setLevel(0);
+        level(0);
         setState("IDLE");
     }
 
@@ -136,9 +137,9 @@ final class Assistant {
             recognizer.setRecognitionListener(new RecognitionListener() {
                 @Override public void onReadyForSpeech(Bundle params) {}
                 @Override public void onBeginningOfSpeech() {}
-                @Override public void onRmsChanged(float db) { if (db > VoiceRules.HEARD_DB) heardSound = true; orb.setLevel((db + 2f) / 12f); }
+                @Override public void onRmsChanged(float db) { if (db > VoiceRules.HEARD_DB) heardSound = true; level((db + 2f) / 12f); }
                 @Override public void onBufferReceived(byte[] buffer) {}
-                @Override public void onEndOfSpeech() { orb.setLevel(0); }
+                @Override public void onEndOfSpeech() { level(0); }
                 @Override public void onError(int error) {
                     if (!state.equals("LISTENING")) return;
                     // A recogniser that reported a client or server fault is rebuilt for the next press.
@@ -272,18 +273,18 @@ final class Assistant {
         @Override public void onStop(String id, boolean interrupted) { main.post(() -> finished(id)); }
         /** Each spoken word pulses the orb, standing in for Rupert's playback level meter. */
         @Override public void onRangeStart(String id, int start, int end, int frame) {
-            main.post(() -> { if (state.equals("SPEAKING")) { orb.setLevel(.55f + Math.min(.4f, (end - start) * .04f)); main.postDelayed(() -> orb.setLevel(.15f), 140); } });
+            main.post(() -> { if (state.equals("SPEAKING")) { level(.55f + Math.min(.4f, (end - start) * .04f)); main.postDelayed(() -> level(.15f), 140); } });
         }
     };
 
     private void finished(String id) {
         if (!("bay65-" + generation).equals(id) || !state.equals("SPEAKING")) return;
-        orb.setLevel(0);
+        level(0);
         setState("IDLE");
     }
 
     private void fail(String message) {
-        orb.setLevel(0);
+        level(0);
         answer.setText(message);
         bubble.setVisibility(View.VISIBLE);
         setState("ERROR");
@@ -299,15 +300,16 @@ final class Assistant {
     private void setState(String next) {
         state = next;
         render();
+        AssistantPresence.setState(next);
+    }
+
+    private void level(float value) {
+        orb.setLevel(value);
+        AssistantPresence.setLevel(value);
     }
 
     private void render() {
-        switch (state) {
-            case "LISTENING": orb.setMode(OrbView.Mode.MIC); break;
-            case "THINKING": orb.setMode(OrbView.Mode.SHIMMER); break;
-            case "SPEAKING": orb.setMode(OrbView.Mode.SPEECH); break;
-            default: orb.setMode(OrbView.Mode.QUIET);
-        }
+        orb.setMode(OrbView.forState(state));
         status.setText(Agent.stateLabel(state) + (state.equals("IDLE") || state.equals("ERROR") ? " · OK to talk · Hold OK to type" : " · OK to stop"));
         orb.setContentDescription(host.configured()
                 ? "BAY65 Assistant. " + Agent.stateLabel(state) + ". Press OK to " + (state.equals("IDLE") || state.equals("ERROR") ? "talk, or hold OK to type." : "stop.")

@@ -2,6 +2,12 @@
 
 This records released source versions and significant changes. It does not imply public APK availability.
 
+## Unreleased
+
+- **Everywhere Mode** (optional, off by default): the assistant orb stays in a chosen corner over other apps, and "Ask BAY65" opens a translucent assistant panel over the current app via Google Assistant ("Hey Google, open Ask BAY65"), the notification, or the app list. The overlay is display-only and never takes remote focus. Settings for position, size, idle opacity, auto-dim and restore after restart; burn-in drift and a 5 fps idle redraw. Not yet validated on a physical TV. See [Everywhere Mode](android/EVERYWHERE.md).
+- New permissions, requested only when Everywhere Mode is turned on: display over other apps, foreground service (special use), notifications (Android 13+) and start at boot.
+- Shared assistant state and settings: one conversation and one provider configuration for the launcher and the panel.
+
 ## 0.3.0 — 18 November 2026
 
 **BAY65 Assistant** — an optional, floating voice assistant on the home screen. Off until you set it up in Settings → BAY65 Assistant. PRs #1–#4.

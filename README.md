@@ -6,7 +6,7 @@
 
 A remote-first Android TV launcher that brings live Singapore bus arrivals, favourite apps and personal photo backgrounds together. Built as an independent personal engineering project, inspired by *bahay* (home), Singapore's Marina Bay, bus bays and +65.
 
-**Version:** 0.2.2 · Android TV 8.0+ · MIT-licensed source · Source-only distribution
+**Version:** 0.3.0 · Android TV 8.0+ · MIT-licensed source · Source-only distribution
 
 ![BAY65 home screen — privacy-redacted TV view](https://raw.githubusercontent.com/cjgl23/bay65/main/portfolio/bay65-redacted.png)
 

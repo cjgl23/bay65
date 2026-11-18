@@ -2,16 +2,32 @@
 
 This records released source versions and significant changes. It does not imply public APK availability.
 
-## Unreleased
+## 0.3.0 — 18 November 2026
 
-- Add the optional BAY65 Assistant: a floating, state-coloured voice orb ported from Rupert AI, using the TV's free speech recogniser and text-to-speech, with Google Gemini, Groq, OpenRouter or an HTTPS OpenAI-compatible server (such as Ollama) for answers.
-- Encrypt the assistant key with Android Keystore; share stops, live arrivals and favourite app names only while the opt-out setting is on.
-- Request microphone permission only on first use; fall back to the system voice screen or typing.
-- Use Gemini's native API with optional Grounding with Google Search, so the assistant can answer current questions (new releases, charts, trending songs) about your favourite apps; show up to three sources under searched answers. Default Gemini model is now `gemini-3.5-flash-lite`.
-- Share Playtime app names alongside favourites, and tell the assistant to relate entertainment questions to those apps.
-- Assistant hardening from code review: fall back to the system voice screen when in-app listening fails or hears nothing, remembering it for TVs whose microphone only works there; rebuild the recogniser after faults and retry text-to-speech that failed to start; run assistant requests on their own thread and abort them when stopped, with a 60-second limit; give Gemini room to think (1,024 output tokens, default temperature) and mark cut-off answers; redraw the idle orb at a reduced rate; never reuse a saved custom-server key for a different server address.
-- Assistant fixes from code review: the remote's search key only opens the assistant once it is set up; server errors (such as 503 "The model is overloaded") no longer blame the model or key; daily limits are told apart from per-minute limits; searched questions retry once without web search on a rate limit or grounding error; Save and test uses the real web-search setting and saves exactly the tested values; conversation history is cleared on settings changes and Turn off; a late voice result after Turn off can no longer crash the launcher; privacy wording now says sharing is on unless turned off and names games.
-- Show the provider's reason for rejected assistant requests, and report Gemini's HTTP 400 invalid-key response as a key problem rather than a model problem.
+**BAY65 Assistant** — an optional, floating voice assistant on the home screen. Off until you set it up in Settings → BAY65 Assistant. PRs #1–#4.
+
+### New
+- Floating, state-coloured orb (blue idle, teal listening, amber thinking or speaking), ported from Rupert AI. Select it and press OK to talk, hold OK to type; once set up, the remote's search key also talks to it.
+- Free voice on the TV: Android's speech recogniser for listening and built-in text-to-speech for replies. No voice API key.
+- Free AI providers: Google Gemini (default model `gemini-3.5-flash-lite`), Groq, OpenRouter free models, or your own HTTPS OpenAI-compatible server such as Ollama.
+- Gemini web search (Grounding with Google Search, on by default) for current questions about your favourite apps, such as new releases, top 10s and trending songs, with up to three sources shown under the answer.
+- Optional sharing of your stops, live arrivals, and favourite app and game names, so you can ask "When is my next bus?" (on by default; turn it off in Assistant settings).
+
+### Security and privacy
+- Provider key tested before saving, encrypted with Android Keystore, masked, excluded from autofill and screenshots, sent only in a header and never logged. The LTA key's storage is unchanged.
+- HTTPS only, redirects disabled; a saved custom-server key is never sent to a different address.
+- Microphone permission requested only on first use. Conversation history stays in memory and is cleared on settings changes and Turn off.
+
+### Reliability (from a multi-agent code review)
+- Clear errors: server overloads are temporary and never blame your model or key; daily limits are told apart from per-minute limits; Gemini's invalid-key reply is reported as a key problem.
+- Searched questions retry once without web search on a rate limit or grounding error; Save and test uses the real web-search setting.
+- Falls back to the system voice screen when in-app listening fails, rebuilds a faulted recogniser and retries text-to-speech.
+- Assistant requests run on their own thread, stop at once when you press OK and time out after 60 seconds, so bus updates are never delayed.
+- The idle orb redraws at a reduced rate.
+
+### Packaging
+- Version 0.3.0, version code 6. Same package IDs and maintenance signer; existing stops, apps, photos and the LTA key are preserved on upgrade.
+- New permissions: `RECORD_AUDIO` (asked on first voice use). The microphone is declared optional.
 
 ## 0.2.2 — 15 November 2026
 

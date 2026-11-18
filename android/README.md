@@ -77,7 +77,7 @@ To restore the built-in Google launcher, run `adb shell pm enable --user 0 com.g
 
 ## Build
 
-Current source: 0.2.2, version code 5. Use JDK 17 or newer, Android SDK platform 36 and build-tools 36.0.0. The pinned Gradle wrapper is 9.9.1. Configure `sdk.dir` in an untracked `local.properties` file, or use your normal Android SDK environment configuration.
+Current source: 0.3.0, version code 6. Use JDK 17 or newer, Android SDK platform 36 and build-tools 36.0.0. The pinned Gradle wrapper is 9.9.1. Configure `sdk.dir` in an untracked `local.properties` file, or use your normal Android SDK environment configuration.
 
 ```sh
 ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug

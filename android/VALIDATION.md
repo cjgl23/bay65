@@ -1,5 +1,9 @@
 # BAY65 validation evidence
 
+## v0.3.0
+
+Automated only so far. GitHub Actions passed on each assistant PR (#1–#4): Android lint (release and tv), unit tests, assembly of all variants, release-artifact verification, and Trivy/dependency scans. JVM unit tests cover provider requests, error mapping, grounding parsing and voice-fallback rules. The owner confirmed the assistant answering spoken questions on the Android 10 TV during development (Gemini, after correcting the model name). A full physical acceptance pass of 0.3.0, including web search, search-key behaviour, voice fallback and upgrade from 0.2.2, has not yet been recorded.
+
 ## v0.2.2
 
 The original 0.2.2 source baseline passed Android compilation, lint, unit tests, browser DOM/Python tests, temporary test-signed release packaging, and repository/dependency and reachable-history secret scans. These checks are repeated in this repository's GitHub Actions workflows.

@@ -120,7 +120,7 @@ def main():
     config = (ROOT / 'android/app/build.gradle').read_text()
     version = re.search(r"versionName\s+'([^']+)'", config).group(1)
     code = re.search(r'versionCode\s+(\d+)', config).group(1)
-    require(version == '0.2.2' and code == '5', 'Unexpected release version; review before updating automation')
+    require(version == '0.3.0' and code == '6', 'Unexpected release version; review before updating automation')
     secrets = [password.encode(), *( (signing / key).read_bytes() for key in key_hashes)]
     out.mkdir(parents=True)
     private = out / 'private-maintenance'

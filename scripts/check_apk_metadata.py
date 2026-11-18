@@ -5,9 +5,9 @@ import subprocess
 from scripts.build_signed_release import ROOT, check_badging, require
 
 EXPECTED = {
-    'debug': ('app.bay65.tv.debug', '0.2.2-dev', 'app-debug.apk'),
-    'release': ('app.bay65.tv', '0.2.2', 'app-release-unsigned.apk'),
-    'tv': ('app.nook.tv.debug', '0.2.2-tv', 'app-tv-unsigned.apk'),
+    'debug': ('app.bay65.tv.debug', '0.3.0-dev', 'app-debug.apk'),
+    'release': ('app.bay65.tv', '0.3.0', 'app-release-unsigned.apk'),
+    'tv': ('app.nook.tv.debug', '0.3.0-tv', 'app-tv-unsigned.apk'),
 }
 
 
@@ -16,7 +16,7 @@ def check_metadata(text, variant):
     if variant == 'debug':
         # check_badging deliberately accepts only non-debuggable distributions.
         text = text.replace('application-debuggable', '')
-    check_badging(text, package, version, '5')
+    check_badging(text, package, version, '6')
     require("application-label:'BAY65'" in text, 'Unexpected application label')
     require("leanback-launchable-activity: name='app.nook.tv.MainActivity'" in text,
             'Internal activity namespace must remain compatible')

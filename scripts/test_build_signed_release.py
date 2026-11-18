@@ -9,23 +9,24 @@ from scripts.check_apk_metadata import check_metadata, EXPECTED
 
 class ReleaseSafetyTests(unittest.TestCase):
     def test_manifest_identity_and_debuggability(self):
-        text = "package: name='app.nook.tv.debug' versionCode='5' versionName='0.2.2-tv'\n"
-        check_badging(text, 'app.nook.tv.debug', '0.2.2-tv', '5')
+        text = "package: name='app.nook.tv.debug' versionCode='6' versionName='0.3.0-tv'\n"
+        check_badging(text, 'app.nook.tv.debug', '0.3.0-tv', '6')
         for changed in (text.replace("name='app.nook.tv.debug'", "name='app.bay65.tv'"),
-                        text.replace("versionCode='5'", "versionCode='1'"),
-                        text.replace('0.2.2-tv', '0.2.2-dev'), text + 'application-debuggable'):
+                        text.replace("versionCode='6'", "versionCode='1'"),
+                        text.replace('0.3.0-tv', '0.3.0-dev'), text + 'application-debuggable'):
             with self.assertRaises(RuntimeError):
-                check_badging(changed, 'app.nook.tv.debug', '0.2.2-tv', '5')
+                check_badging(changed, 'app.nook.tv.debug', '0.3.0-tv', '6')
 
     def test_all_variant_identities_and_branding(self):
         for variant, (package, version, _) in EXPECTED.items():
-            text = (f"package: name='{package}' versionCode='5' versionName='{version}'\n"
+            text = (f"package: name='{package}' versionCode='6' versionName='{version}'\n"
                     "application-label:'BAY65'\nleanback-launchable-activity: name='app.nook.tv.MainActivity'\n")
             check_metadata(text, variant)
             for changed in (text.replace('BAY65', 'Nook'), text.replace(package, 'app.wrong.tv'),
-                            text.replace("versionCode='5'", "versionCode='2'"),
-                            text.replace("versionCode='5'", "versionCode='3'"),
-                            text.replace("versionCode='5'", "versionCode='4'"),
+                            text.replace("versionCode='6'", "versionCode='2'"),
+                            text.replace("versionCode='6'", "versionCode='3'"),
+                            text.replace("versionCode='6'", "versionCode='4'"),
+                            text.replace("versionCode='6'", "versionCode='5'"),
                             text.replace(version, '0.1.1'), text.replace('app.nook.tv.MainActivity', 'app.bay65.tv.MainActivity')):
                 with self.subTest(variant=variant), self.assertRaises(RuntimeError):
                     check_metadata(changed, variant)

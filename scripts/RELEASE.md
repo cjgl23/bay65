@@ -8,8 +8,8 @@ When sharing a future public APK, use your own securely protected signing materi
 
 ## Package identities
 
-- Public release: `app.bay65.tv`, 0.2.2, version code 5.
-- Development: `app.bay65.tv.debug`, 0.2.2-dev.
-- Private legacy maintenance: `app.nook.tv.debug`, 0.2.2-tv; original signer and storage identity retained.
+- Public release: `app.bay65.tv`, 0.3.0, version code 6.
+- Development: `app.bay65.tv.debug`, 0.3.0-dev.
+- Private legacy maintenance: `app.nook.tv.debug`, 0.3.0-tv; original signer and storage identity retained.
 
 Do not substitute one package for another. No APK release is currently published. See [distribution policy](../PUBLIC-RELEASE.md).

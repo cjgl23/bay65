@@ -1,0 +1,140 @@
+package app.nook.tv;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
+import java.util.Locale;
+
+/**
+ * Provider presets, validation and request/response handling for the BAY65 Assistant.
+ * Every supported provider speaks the OpenAI-compatible chat completions format, so one
+ * code path covers all of them. Pure Java (plus org.json) so it runs in JVM unit tests.
+ */
+public final class Agent {
+    private Agent() {}
+
+    /** Free-to-use providers. Model names are editable because free catalogues change often. */
+    public enum Provider {
+        GEMINI("gemini", "Google Gemini · free tier", "https://generativelanguage.googleapis.com/v1beta/openai",
+                "gemini-flash-latest", true, "aistudio.google.com/apikey"),
+        GROQ("groq", "Groq · free tier", "https://api.groq.com/openai/v1",
+                "llama-3.3-70b-versatile", true, "console.groq.com/keys"),
+        OPENROUTER("openrouter", "OpenRouter · free models", "https://openrouter.ai/api/v1",
+                "meta-llama/llama-3.3-70b-instruct:free", true, "openrouter.ai/keys"),
+        CUSTOM("custom", "Ollama or another OpenAI-compatible server", null,
+                "llama3.2", false, null);
+
+        public final String id, label, baseUrl, defaultModel, keyPage;
+        public final boolean keyRequired;
+
+        Provider(String id, String label, String baseUrl, String defaultModel, boolean keyRequired, String keyPage) {
+            this.id = id; this.label = label; this.baseUrl = baseUrl; this.defaultModel = defaultModel;
+            this.keyRequired = keyRequired; this.keyPage = keyPage;
+        }
+    }
+
+    public static Provider provider(String id) {
+        for (Provider p : Provider.values()) if (p.id.equals(id)) return p;
+        return Provider.GEMINI;
+    }
+
+    /** The chat completions URL. Custom servers must use HTTPS, like every other BAY65 request. */
+    public static String endpoint(Provider provider, String customBase) {
+        String base = provider.baseUrl != null ? provider.baseUrl : customBase == null ? "" : customBase.trim();
+        URI uri;
+        try { uri = new URI(base); } catch (URISyntaxException e) { throw new IllegalArgumentException("Enter a valid server address."); }
+        if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null || uri.getHost().isEmpty())
+            throw new IllegalArgumentException("Enter an https:// server address, for example https://ollama.example.ts.net/v1");
+        if (uri.getRawUserInfo() != null || uri.getRawQuery() != null || uri.getRawFragment() != null)
+            throw new IllegalArgumentException("Remove any user name, query or fragment from the server address.");
+        if (base.length() > 300) throw new IllegalArgumentException("The server address is too long.");
+        return base.replaceAll("/+$", "") + "/chat/completions";
+    }
+
+    public static String model(String value) {
+        String model = value == null ? "" : value.trim();
+        if (!model.matches("[A-Za-z0-9._:/@+-]{1,120}"))
+            throw new IllegalArgumentException("Enter a model name, for example gemini-flash-latest.");
+        return model;
+    }
+
+    /** Same printable-ASCII rule as the LTA key. Blank is allowed only when the provider needs no key. */
+    public static boolean validKey(String key, boolean required) {
+        if (key == null || key.isEmpty()) return !required;
+        return key.length() >= 8 && key.length() <= 512 && key.matches("[\\x21-\\x7e]+");
+    }
+
+    public static final class Turn {
+        public final String role, text;
+        public Turn(String role, String text) { this.role = role; this.text = text; }
+    }
+
+    public static String systemPrompt(String now, String context) {
+        return "You are the BAY65 Assistant, a friendly voice assistant on a Singapore family's Android TV home screen. "
+                + "Answer in at most three short sentences that sound natural when read aloud. "
+                + "Use plain text only: no markdown, lists, emoji or links. "
+                + "For bus questions, use only the live arrival data below and say when it is missing or outdated; never invent arrival times. "
+                + "Capacity: Seats means seats available, Standing means standing room, Limited means limited standing. "
+                + "A ~ before a time means a scheduled rather than live estimate. "
+                + "You cannot open apps or change settings; tell the user where to do it instead.\n"
+                + "Current time in Singapore: " + now + "\n"
+                + (context == null || context.isEmpty() ? "No BAY65 data is shared with you." : context);
+    }
+
+    public static String requestBody(String model, String system, List<Turn> history, String question) {
+        try {
+            JSONArray messages = new JSONArray().put(new JSONObject().put("role", "system").put("content", system));
+            for (Turn turn : history) messages.put(new JSONObject().put("role", turn.role).put("content", turn.text));
+            messages.put(new JSONObject().put("role", "user").put("content", question));
+            return new JSONObject().put("model", model).put("messages", messages)
+                    .put("max_tokens", 400).put("temperature", 0.4).put("stream", false).toString();
+        } catch (JSONException impossible) { throw new IllegalStateException(impossible); }
+    }
+
+    /** The first choice's text, or an IllegalArgumentException when the reply has none. */
+    public static String answer(String body) {
+        try {
+            JSONObject choice = new JSONObject(body).getJSONArray("choices").getJSONObject(0);
+            Object content = choice.getJSONObject("message").opt("content");
+            String text = content instanceof String ? ((String) content).trim() : "";
+            if (text.isEmpty()) throw new IllegalArgumentException("The assistant returned an empty answer. Try again.");
+            return text.length() > 4000 ? text.substring(0, 4000) : text;
+        } catch (JSONException e) {
+            throw new IllegalArgumentException("The assistant returned an unexpected response. Try again shortly.");
+        }
+    }
+
+    public static String failure(int status) {
+        if (status == 400 || status == 404) return "The provider rejected the request. Check the model name in Assistant settings.";
+        if (status == 401 || status == 403) return "The provider rejected the API key. Check it in Assistant settings.";
+        if (status == 429) return "The free-tier limit was reached. Wait a minute and try again.";
+        return "The assistant is temporarily unavailable. Try again shortly.";
+    }
+
+    /** Strips formatting a TV voice should not read out, as Rupert does before speech. */
+    public static String spokenForm(String text) {
+        String spoken = text
+                .replaceAll("```[\\s\\S]*?```", "")
+                .replaceAll("\\[([^\\]]+)\\]\\([^)]*\\)", "$1")
+                .replaceAll("https?://\\S+", "")
+                .replaceAll("`[^`]*`", "")
+                .replaceAll("[#*_>|]", "")
+                .replaceAll("\\s+", " ")
+                .trim();
+        return spoken.length() > 1800 ? spoken.substring(0, 1800) : spoken;
+    }
+
+    /** Short status words shown beside the orb, mirroring Rupert's voice labels. */
+    public static String stateLabel(String state) {
+        switch (state == null ? "" : state.toUpperCase(Locale.ROOT)) {
+            case "LISTENING": return "Listening";
+            case "THINKING": return "Thinking";
+            case "SPEAKING": return "Speaking";
+            case "ERROR": return "Needs attention";
+            default: return "Ready";
+        }
+    }
+}

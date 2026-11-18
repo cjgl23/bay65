@@ -44,7 +44,11 @@ android {
     lint { abortOnError true }
 }
 
-dependencies { testImplementation 'junit:junit:4.13.2' }
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+    // Real org.json for JVM tests; Android's stub jar throws in unit tests.
+    testImplementation 'org.json:json:20250517'
+}
 
 // Explicit final IDs avoid a public-ID change leaking into the maintenance build.
 androidComponents {

@@ -14,14 +14,19 @@ import javax.crypto.spec.GCMParameterSpec;
 
 /** Only ciphertext is persisted. The wrapping key stays in Android Keystore. */
 final class SecretStore {
+    // The LTA key keeps its original storage names so existing installations stay connected.
     private static final String ALIAS="nook.lta.v1";
+    private final String alias;
     private final SharedPreferences preferences;
-    SecretStore(Context c) {preferences=c.getSharedPreferences("nook_secret",Context.MODE_PRIVATE);}
+    SecretStore(Context c) {preferences=c.getSharedPreferences("nook_secret",Context.MODE_PRIVATE);alias=ALIAS;}
+    private SecretStore(SharedPreferences preferences,String alias) {this.preferences=preferences;this.alias=alias;}
+    /** A separate encrypted slot for the BAY65 Assistant's provider key. */
+    static SecretStore assistant(Context c) {return new SecretStore(c.getSharedPreferences("nook_agent_secret",Context.MODE_PRIVATE),"nook.agent.v1");}
     private SecretKey key() throws Exception {
         KeyStore store=KeyStore.getInstance("AndroidKeyStore");store.load(null);
-        if(store.containsAlias(ALIAS))return (SecretKey)store.getKey(ALIAS,null);
+        if(store.containsAlias(alias))return (SecretKey)store.getKey(alias,null);
         KeyGenerator generator=KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES,"AndroidKeyStore");
-        generator.init(new KeyGenParameterSpec.Builder(ALIAS,KeyProperties.PURPOSE_ENCRYPT|KeyProperties.PURPOSE_DECRYPT)
+        generator.init(new KeyGenParameterSpec.Builder(alias,KeyProperties.PURPOSE_ENCRYPT|KeyProperties.PURPOSE_DECRYPT)
                 .setBlockModes(KeyProperties.BLOCK_MODE_GCM).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).build());
         return generator.generateKey();
     }
@@ -41,6 +46,6 @@ final class SecretStore {
     }
     synchronized void clear() {
         preferences.edit().clear().commit();
-        try {KeyStore store=KeyStore.getInstance("AndroidKeyStore");store.load(null);store.deleteEntry(ALIAS);}catch(Exception ignored){}
+        try {KeyStore store=KeyStore.getInstance("AndroidKeyStore");store.load(null);store.deleteEntry(alias);}catch(Exception ignored){}
     }
 }

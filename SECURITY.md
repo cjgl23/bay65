@@ -10,6 +10,6 @@ Use **Security → Report a vulnerability** if private reporting is available. O
 
 ## Security and privacy
 
-Each user supplies their own LTA DataMall key. Never commit credentials, local preferences or signing material. The Android app stores its key using Android Keystore, excludes private settings from backups, and uses HTTPS. The browser preview is a loopback-only development service, not a public web service.
+Each user supplies their own LTA DataMall key and, for the optional assistant, their own AI provider key. Never commit credentials, local preferences or signing material. The Android app stores its keys using Android Keystore, excludes private settings from backups, and uses HTTPS. The browser preview is a loopback-only development service, not a public web service.
 
 CI validates source tests, Android lint/build and release artifacts. The shared security workflow scans for vulnerabilities, secrets and misconfiguration. These checks do not constitute a security certification.

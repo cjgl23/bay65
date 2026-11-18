@@ -14,11 +14,14 @@ import javax.crypto.spec.GCMParameterSpec;
 
 /** Only ciphertext is persisted. The wrapping key stays in Android Keystore. */
 final class SecretStore {
+    // The LTA key keeps its original storage names so existing installations stay connected.
+    private static final String ALIAS="nook.lta.v1";
     private final String alias;
     private final SharedPreferences preferences;
-    /** The LTA key keeps its original storage names so existing installations stay connected. */
-    SecretStore(Context c) {this(c,"nook_secret","nook.lta.v1");}
-    SecretStore(Context c,String file,String alias) {preferences=c.getSharedPreferences(file,Context.MODE_PRIVATE);this.alias=alias;}
+    SecretStore(Context c) {preferences=c.getSharedPreferences("nook_secret",Context.MODE_PRIVATE);alias=ALIAS;}
+    private SecretStore(SharedPreferences preferences,String alias) {this.preferences=preferences;this.alias=alias;}
+    /** A separate encrypted slot for the BAY65 Assistant's provider key. */
+    static SecretStore assistant(Context c) {return new SecretStore(c.getSharedPreferences("nook_agent_secret",Context.MODE_PRIVATE),"nook.agent.v1");}
     private SecretKey key() throws Exception {
         KeyStore store=KeyStore.getInstance("AndroidKeyStore");store.load(null);
         if(store.containsAlias(alias))return (SecretKey)store.getKey(alias,null);

@@ -143,7 +143,7 @@ public class MainActivity extends Activity {
         super.onCreate(state);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-        store=new NookStore(this);secrets=new SecretStore(this);apiKey=secrets.read();agentSecrets=new SecretStore(this,"nook_agent_secret","nook.agent.v1");agentKey=agentSecrets.read();apps=new AppRepository(this);photoManager=new PhotoManager(this,store);
+        store=new NookStore(this);secrets=new SecretStore(this);apiKey=secrets.read();agentSecrets=SecretStore.assistant(this);agentKey=agentSecrets.read();apps=new AppRepository(this);photoManager=new PhotoManager(this,store);
         connectivity=(ConnectivityManager)getSystemService(CONNECTIVITY_SERVICE);
         compact=getResources().getDisplayMetrics().heightPixels/getResources().getDisplayMetrics().density<600;
         apps.refresh(store);buildHome();

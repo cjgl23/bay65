@@ -1,1 +1,2 @@
-<resources><string name="app_name">BAY65</string><string name="ask_name">Ask BAY65</string></resources>
+<resources><string name="app_name">BAY65</string><string name="ask_name">Ask BAY65</string><string name="shortcut_name">BAY65 remote shortcut</string>
+<string name="shortcut_description">Opens BAY65 Assistant with your chosen remote button while Everywhere Mode is on. Receives remote key events; does not read screen content, record keys, or listen in the background. Other buttons pass through unchanged. Choose the button in BAY65 Settings.</string></resources>

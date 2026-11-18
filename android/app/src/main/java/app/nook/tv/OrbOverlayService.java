@@ -112,7 +112,7 @@ public final class OrbOverlayService extends Service implements AssistantPresenc
         orb.setMode(OrbView.forState(AssistantPresence.state));
         long idle = System.currentTimeMillis() - AssistantPresence.lastActive;
         orb.setAlpha(Everywhere.alpha(preferences.getInt(Everywhere.OPACITY, Everywhere.DEFAULT_OPACITY),
-                preferences.getBoolean(Everywhere.AUTO_DIM, true), idle));
+                preferences.getBoolean(Everywhere.AUTO_DIM, false), idle));
         place();
     }
 

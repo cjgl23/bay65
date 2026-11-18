@@ -1,12 +1,12 @@
 # Sharing BAY65
 
-Current distribution is source-only (0.2.2, version code 5). From a committed checkout, package the source and checksums into a new or empty directory:
+Current distribution is source-only (0.3.0, version code 6). From a committed checkout, package the source and checksums into a new or empty directory:
 
 ```sh
 python3 scripts/package_release.py --out dist
 ```
 
-The archive is built from committed HEAD using an explicit allowlist. It excludes Git history, local configuration, personal files, signing material and the portfolio-only redacted screenshot. Review the archive before sharing it.
+The archive is built from committed HEAD using an explicit allowlist. Uncommitted shortcut, documentation or other changes are not included; commit and review the intended source before creating the archive. It excludes Git history, local configuration, personal files, signing material and the portfolio-only redacted screenshot. Review the archive before sharing it.
 
 For an independently signed standard APK (not distributed by this project), the package script can verify the signed APK against the expected certificate fingerprint, package ID, version and alignment:
 

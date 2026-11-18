@@ -8,8 +8,8 @@ public class EverywhereTest {
         assertEquals(Everywhere.Corner.BOTTOM_RIGHT,Everywhere.corner(null));
         assertEquals(Everywhere.Corner.BOTTOM_RIGHT,Everywhere.corner("NOWHERE"));
         assertEquals(Everywhere.Size.SMALL,Everywhere.size(null));
-        assertEquals(30,Everywhere.opacity(Everywhere.DEFAULT_OPACITY));
-        assertEquals(30,Everywhere.opacity(77));
+        assertEquals(100,Everywhere.opacity(Everywhere.DEFAULT_OPACITY));
+        assertEquals(100,Everywhere.opacity(77));
         assertEquals(4,Everywhere.Corner.values().length);
     }
     @Test public void savedChoicesRoundTripByName(){

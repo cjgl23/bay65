@@ -50,9 +50,25 @@ A floating voice orb in the bottom-right corner of the home screen, ported from 
 - BAY65 does not send unencrypted traffic, so Ollama on your home network needs an HTTPS front end such as Tailscale Serve or a reverse proxy.
 - Conversation history (last six exchanges) is kept in memory only, and is cleared when you save new assistant settings or turn the assistant off. **Turn off and remove saved key** clears the provider settings and key.
 
-### Everywhere Mode (optional)
+### Everywhere Mode and remote shortcut (optional)
 
-Keep the orb in a corner while you use other apps, and ask from anywhere with "Hey Google, open Ask BAY65" or the "Ask BAY65" notification. Off by default; needs Android's "Display over other apps" permission. The orb is display-only and never takes the remote's focus. See [Everywhere Mode](EVERYWHERE.md) for how it works, compatibility, limitations and the TV acceptance checklist.
+Keep the orb in a corner while using another app, then press a chosen remote button to open the Assistant panel. Everywhere Mode and the shortcut are off by default. The remote-shortcut changes are in the current unreleased source, pending PR review.
+
+1. Set up **Settings → BAY65 Assistant**, then select **Save and test**. A successful test saves the encrypted provider key.
+2. Open **Everywhere Mode → Turn on Everywhere Mode** and grant **Display over other apps**. If the TV omits that permission screen, follow BAY65’s one-time ADB guidance.
+3. Scroll to **Remote shortcut → Shortcut button** and choose **Menu**. Red, Blue and Search are alternatives; some firmware reserves Search for Google Assistant.
+4. Select **Remote shortcut service · Enable in Accessibility**. On the tested PrismPlus TV, use the fallback **Open Android settings → Device Preferences → Accessibility → BAY65 remote shortcut → Enable → OK**.
+5. Open another app and press **Menu**. The Assistant panel opens and starts listening; hold OK on its orb to type. Press **Back** to close it and return to the app. Some apps may pause while the panel is open.
+
+The floating overlay orb is display-only and cannot receive D-pad focus. The chosen shortcut replaces that button’s normal action while Everywhere Mode is on, Assistant is configured and overlay access is allowed. Other buttons pass through. Set **Shortcut button → Off** to stop filtering, or disable **BAY65 remote shortcut** in Android Accessibility to revoke access entirely. Competing button-mapping accessibility services can prevent key delivery.
+
+The optional shortcut service receives button events without reading screen content, subscribing to accessibility events or storing key history. Android displays its general key-observation warning when enabling it. No other accessibility service needs to be changed.
+
+**Visibility:** idle opacity now defaults to **100%**, with **Dim further after 30 seconds without assistant activity** off. Corner, size, opacity and dimming remain adjustable; existing explicit choices are preserved. The tested setup uses Bottom right and Small.
+
+**Verified on the owner’s Android 10 TV:** the physical Menu button opened the panel over Prime Video, and Back returned to Prime Video. The Google Assistant command “Open Ask BAY65” did not work on this TV. The Ask BAY65 notification or external app lists may provide alternatives where supported; Home then the launcher orb remains available. Netflix/YouTube playback, reboot persistence and the full acceptance checklist remain unverified.
+
+See [the exact owner TV setup](EVERYWHERE.md#exact-setup-used-on-the-owners-tv) for installation steps, permission checks, diagnostics and scoped test evidence.
 
 ## Photos
 
@@ -64,7 +80,7 @@ BAY65 copies selected images into private storage so they survive restarting the
 
 BAY65 declares Android's HOME and LEANBACK_LAUNCHER activities. Opening it does not disable or remove other launchers. Settings → Choose launcher explains the current Home-role status and offers the system chooser or confirmation where supported. A launcher that intercepts the Home button through an accessibility service may require changing its own configuration before Home opens BAY65.
 
-BAY65 does not install its own accessibility service or silently change the default home app. Native settings shortcuts skip known placeholder activities. If Bluetooth or accessibility routes are unsupported, BAY65 offers pairing or settings guidance as appropriate; device firmware determines available actions. Launcher changes require explicit system confirmation.
+BAY65 does not silently change the default home app. Its optional remote shortcut accessibility service must be enabled separately in Android settings; it filters the chosen button without reading screen content. Native settings shortcuts skip known placeholder activities. If Bluetooth or accessibility routes are unsupported, BAY65 offers pairing or settings guidance as appropriate; device firmware determines available actions. Launcher changes require explicit system confirmation.
 
 ### Advanced, device-specific troubleshooting (optional)
 
@@ -112,7 +128,7 @@ adb shell am instrument -w -r app.bay65.tv.debug.test/app.nook.tv.NookChecks
 
 Run instrumentation only on an isolated development emulator or test device, not the configured maintenance installation. Compilation is not proof of execution. Development tests use generated images and generic fixture data. No real credentials or personal bus-stop examples are included in the tests.
 
-The maintainer's Android 10 TV (1920×1080) has been used for historical physical testing; the owner reports the 0.2.2 maintenance update is installed with no further issues. See [validation evidence](VALIDATION.md) for the scope and limitations. Other manufacturers' settings screens and file pickers may behave differently. The UI is currently in English.
+The maintainer’s PrismPlus Android 10 TV (1920×1080) runs the 0.3.0 maintenance build with the pending shortcut changes. The owner confirmed physical Menu-button activation over Prime Video, and Back returning to Prime Video was verified. This is a limited device check, not complete acceptance of Everywhere Mode or the public APK. See [validation evidence](VALIDATION.md) for the scope and limitations. Other manufacturers' settings screens and file pickers may behave differently. The UI is currently in English.
 
 ## Public distribution
 
@@ -120,10 +136,10 @@ See [privacy notice](../PRIVACY.md), [LTA data attribution and terms](../DATA-AT
 
 ## Current release and compatibility
 
-Version 0.2.2 uses version code 5. Public release `app.bay65.tv` is a separate installation from the previous Nook public package. The maintenance build `app.nook.tv.debug` / `0.2.2-tv` retains its original signer, internal Java namespace, preference identifiers, photo paths and Keystore aliases. Development uses `app.bay65.tv.debug` / `0.2.2-dev`. Do not replace the configured-TV package with the public or development APK.
+Current source is version **0.3.0**, version code **6**, with Everywhere Mode and remote-shortcut changes pending review. Public release `app.bay65.tv` is a separate installation from the previous Nook public package. The maintenance build `app.nook.tv.debug` / `0.3.0-tv` retains its original signer, internal Java namespace, preference identifiers, photo paths and Keystore aliases. Development uses `app.bay65.tv.debug` / `0.3.0-dev`. Do not replace the configured-TV package with the public or development APK.
 
 BAY65 Transit shows Next, Then and Later using each bus's LTA Load: green for SEA (seats), orange for SDA (standing), red for LSD (limited standing). Unknown/missing Load uses slate. Missing/stale estimates have no occupancy indication. Arrival times are colour-only; accessible descriptions and the About legend explain capacity. Native cards grow into available space above favourites while preserving app shelf position. BAY65 Memories retains private local photo storage.
 
 Horizontal app shelves and vertical Settings scrolling use standard system navigation audio for handled directional operations, respecting disabled sound effects. Settings scrollbars are hidden without disabling scrolling. Back/Close labels are centred.
 
-The owner reports that the 0.2.2 maintenance update is installed with no further issues. Do not interpret this as separate public-APK physical acceptance. See [VALIDATION.md](VALIDATION.md) and [release gates](../PUBLIC-RELEASE.md).
+Updating the same maintenance package with its original signer preserves stops, photos, favourites, encrypted provider keys and existing Everywhere Mode settings. New installations start with Assistant, Everywhere Mode and the remote shortcut off. The maintenance-TV checks do not establish separate public-APK physical acceptance. See [VALIDATION.md](VALIDATION.md) and [release gates](../PUBLIC-RELEASE.md).

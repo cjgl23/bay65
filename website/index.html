@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en-SG">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BAY65: Home is your next stop</title>
+<meta name="description" content="BAY65 is an open-source Android TV launcher with live Singapore bus arrivals, your favourite apps, your own photos and an optional voice assistant.">
+<meta name="theme-color" content="#0C1825">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+<link rel="preload" href="/assets/fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/img/home-screen.webp" as="image" type="image/webp" fetchpriority="high">
+<link rel="stylesheet" href="/styles.css">
+<meta property="og:type" content="website">
+<meta property="og:title" content="BAY65: Home is your next stop">
+<meta property="og:description" content="An Android TV launcher with live Singapore bus arrivals, your favourite apps and your own photos on one screen.">
+<meta property="og:image" content="/assets/img/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<script src="/main.js" defer></script>
+</head>
+<body>
+<svg width="0" height="0" class="sprite" aria-hidden="true">
+  <symbol id="i-github" viewBox="0 0 256 256"><path d="M208.31,75.68A59.78,59.78,0,0,0,202.93,28,8,8,0,0,0,196,24a59.75,59.75,0,0,0-48,24H124A59.75,59.75,0,0,0,76,24a8,8,0,0,0-6.93,4,59.78,59.78,0,0,0-5.38,47.68A58.14,58.14,0,0,0,56,104v8a56.06,56.06,0,0,0,48.44,55.47A39.8,39.8,0,0,0,96,192v8H72a24,24,0,0,1-24-24A40,40,0,0,0,8,136a8,8,0,0,0,0,16,24,24,0,0,1,24,24,40,40,0,0,0,40,40H96v16a8,8,0,0,0,16,0V192a24,24,0,0,1,48,0v40a8,8,0,0,0,16,0V192a39.8,39.8,0,0,0-8.44-24.53A56.06,56.06,0,0,0,216,112v-8A58.14,58.14,0,0,0,208.31,75.68ZM200,112a40,40,0,0,1-40,40H112a40,40,0,0,1-40-40v-8a41.74,41.74,0,0,1,6.9-22.48A8,8,0,0,0,80,73.83a43.81,43.81,0,0,1,.79-33.58,43.88,43.88,0,0,1,32.32,20.06A8,8,0,0,0,119.82,64h32.35a8,8,0,0,0,6.74-3.69,43.87,43.87,0,0,1,32.32-20.06A43.81,43.81,0,0,1,192,73.83a8.09,8.09,0,0,0,1,7.65A41.72,41.72,0,0,1,200,104Z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 256 256"><path d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 256 256"><path d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 256 256"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol>
+  <symbol id="i-up" viewBox="0 0 256 256"><path d="M213.66,165.66a8,8,0,0,1-11.32,0L128,91.31,53.66,165.66a8,8,0,0,1-11.32-11.32l80-80a8,8,0,0,1,11.32,0l80,80A8,8,0,0,1,213.66,165.66Z"/></symbol>
+  <symbol id="i-down" viewBox="0 0 256 256"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></symbol>
+  <symbol id="i-left" viewBox="0 0 256 256"><path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"/></symbol>
+  <symbol id="i-right" viewBox="0 0 256 256"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/></symbol>
+  <symbol id="i-image" viewBox="0 0 256 256"><path d="M208,32H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM48,48H208v77.38l-24.69-24.7a16,16,0,0,0-22.62,0L53.37,208H48ZM208,208H76l96-96,36,36v60ZM96,120A24,24,0,1,0,72,96,24,24,0,0,0,96,120Zm0-32a8,8,0,1,1-8,8A8,8,0,0,1,96,88Z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 256 256"><path d="M128,112a28,28,0,0,0-8,54.83V184a8,8,0,0,0,16,0V166.83A28,28,0,0,0,128,112Zm0,40a12,12,0,1,1,12-12A12,12,0,0,1,128,152Zm80-72H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM96,56a32,32,0,0,1,64,0V80H96ZM208,208H48V96H208V208Z"/></symbol>
+  <symbol id="i-images" viewBox="0 0 256 256"><path d="M216,40H72A16,16,0,0,0,56,56V72H40A16,16,0,0,0,24,88V200a16,16,0,0,0,16,16H184a16,16,0,0,0,16-16V184h16a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40ZM72,56H216v62.75l-10.07-10.06a16,16,0,0,0-22.63,0l-20,20-44-44a16,16,0,0,0-22.62,0L72,109.37ZM184,200H40V88H56v80a16,16,0,0,0,16,16H184Zm32-32H72V132l36-36,49.66,49.66a8,8,0,0,0,11.31,0L194.63,120,216,141.38V168ZM160,84a12,12,0,1,1,12,12A12,12,0,0,1,160,84Z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 256 256"><path d="M232,208a8,8,0,0,1-8,8H32a8,8,0,0,1-8-8V48a8,8,0,0,1,16,0V60.69l56,56,26.34-26.35a8,8,0,0,1,11.32,0L192,148.69V128a8,8,0,0,1,16,0v40a7,7,0,0,1,0,.8c0,.11,0,.21-.05.32s0,.3-.07.46a2.83,2.83,0,0,1-.09.37c0,.13-.06.26-.1.39s-.08.23-.12.35l-.14.39-.15.31c-.06.13-.12.27-.19.4s-.11.18-.16.28l-.24.39-.21.28-.26.35c-.11.14-.24.27-.36.4l-.16.18-.17.15a4.83,4.83,0,0,1-.42.37,3.92,3.92,0,0,1-.32.25l-.3.22-.38.23a2.91,2.91,0,0,1-.3.17l-.37.19-.34.15-.36.13a2.84,2.84,0,0,1-.38.13l-.36.1c-.14,0-.26.07-.4.09l-.42.07-.35.05a7,7,0,0,1-.79,0H160a8,8,0,0,1,0-16h20.69L128,107.31l-26.34,26.35a8,8,0,0,1-11.32,0L40,83.31V200H224A8,8,0,0,1,232,208Z"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 256 256"><path d="M128,176a48.05,48.05,0,0,0,48-48V64a48,48,0,0,0-96,0v64A48.05,48.05,0,0,0,128,176ZM96,64a32,32,0,0,1,64,0v64a32,32,0,0,1-64,0Zm40,143.6V240a8,8,0,0,1-16,0V207.6A80.11,80.11,0,0,1,48,128a8,8,0,0,1,16,0,64,64,0,0,0,128,0,8,8,0,0,1,16,0A80.11,80.11,0,0,1,136,207.6Z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 256 256"><path d="M232,48H160a40,40,0,0,0-32,16A40,40,0,0,0,96,48H24a8,8,0,0,0-8,8V200a8,8,0,0,0,8,8H96a24,24,0,0,1,24,24,8,8,0,0,0,16,0,24,24,0,0,1,24-24h72a8,8,0,0,0,8-8V56A8,8,0,0,0,232,48ZM96,192H32V64H96a24,24,0,0,1,24,24V200A39.81,39.81,0,0,0,96,192Zm128,0H160a39.81,39.81,0,0,0-24,8V88a24,24,0,0,1,24-24h64ZM160,88h40a8,8,0,0,1,0,16H160a8,8,0,0,1,0-16Zm48,40a8,8,0,0,1-8,8H160a8,8,0,0,1,0-16h40A8,8,0,0,1,208,128Zm0,32a8,8,0,0,1-8,8H160a8,8,0,0,1,0-16h40A8,8,0,0,1,208,160Z"/></symbol>
+</svg>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="masthead">
+  <a class="brand" href="#top" aria-label="BAY65 home">
+    <img src="/assets/logo.svg" width="36" height="36" alt="">
+    <span class="wordmark">bay<span>65</span></span>
+  </a>
+  <a class="button button--ghost" href="https://github.com/cjgl23/bay65">
+    <svg class="icon" aria-hidden="true"><use href="#i-github"/></svg>View source
+  </a>
+</header>
+
+<nav class="route" aria-label="Sections">
+  <ol>
+    <li><a href="#top" data-stop="top">Home</a></li>
+    <li><a href="#transit" data-stop="transit">Transit</a></li>
+    <li><a href="#screen" data-stop="screen">Your screen</a></li>
+    <li><a href="#assistant" data-stop="assistant">Assistant</a></li>
+    <li><a href="#privacy" data-stop="privacy">Privacy</a></li>
+    <li><a href="#build" data-stop="build">Build</a></li>
+  </ol>
+</nav>
+
+<main id="main">
+
+  <section class="hero" id="top" data-section>
+    <div class="hero__copy">
+      <h1>Home is your next&nbsp;stop.</h1>
+      <p class="lede">An Android TV launcher with live Singapore bus arrivals, your favourite apps and your own photos on one screen.</p>
+      <div class="actions">
+        <a class="button" href="https://github.com/cjgl23/bay65">
+          <svg class="icon" aria-hidden="true"><use href="#i-github"/></svg>View source
+        </a>
+        <a class="button button--ghost" href="#transit">See how it works</a>
+      </div>
+    </div>
+    <figure class="tv">
+      <div class="tv__screen">
+        <img src="/assets/img/home-screen.webp"
+             srcset="/assets/img/home-screen-1000.webp 1000w, /assets/img/home-screen.webp 1672w"
+             sizes="(min-width: 1100px) 78vw, 100vw"
+             width="1672" height="941" fetchpriority="high"
+             alt="The BAY65 home screen on a TV: four bus stop cards with colour-coded arrival times, a row of favourite apps and a Playtime row of games.">
+      </div>
+      <figcaption>The home screen on the owner's TV. Stop names and service numbers are blurred for privacy.</figcaption>
+    </figure>
+  </section>
+
+  <section class="transit" id="transit" data-section aria-labelledby="transit-title">
+    <div class="transit__intro">
+      <h2 id="transit-title">Leave when your bus is close, not&nbsp;before.</h2>
+      <p>Pin up to four stops with eight services each. Arrivals refresh every 20&nbsp;seconds while BAY65 is on screen, so you can finish the episode and still make the bus.</p>
+    </div>
+
+    <div class="transit__board">
+      <article class="stop" aria-labelledby="stop-name">
+        <header class="stop__head">
+          <div>
+            <h3 id="stop-name">Your stop</h3>
+            <p class="stop__meta">Sample arrivals for this page, not live LTA data</p>
+          </div>
+          <svg class="icon icon--bus" aria-hidden="true" viewBox="0 0 256 256"><path fill="currentColor" d="M184,32H72A32,32,0,0,0,40,64V208a16,16,0,0,0,16,16H80a16,16,0,0,0,16-16V192h64v16a16,16,0,0,0,16,16h24a16,16,0,0,0,16-16V64A32,32,0,0,0,184,32ZM56,176V120H200v56Zm0-96H200v24H56ZM72,48H184a16,16,0,0,1,16,16H56A16,16,0,0,1,72,48Zm8,160H56V192H80Zm96,0V192h24v16Zm-72-60a12,12,0,1,1-12-12A12,12,0,0,1,104,148Zm72,0a12,12,0,1,1-12-12A12,12,0,0,1,176,148Z"/></svg>
+        </header>
+        <table class="stop__table">
+          <thead><tr><th scope="col">Bus</th><th scope="col">Next</th><th scope="col">Then</th><th scope="col">Later</th></tr></thead>
+          <tbody id="arrivals">
+            <tr><th scope="row">36</th><td class="seats">2 min</td><td class="seats">11 min</td><td class="standing">24 min</td></tr>
+            <tr><th scope="row">14</th><td class="standing">5 min</td><td class="seats">~16 min</td><td class="none">&mdash;</td></tr>
+            <tr><th scope="row">190</th><td class="limited">8 min</td><td class="seats">19 min</td><td class="seats">31 min</td></tr>
+          </tbody>
+        </table>
+        <p class="stop__foot" aria-live="polite"><span id="updated">Updated just now</span></p>
+      </article>
+
+      <dl class="legend">
+        <div><dt class="seats">Green</dt><dd>Seats available</dd></div>
+        <div><dt class="standing">Orange</dt><dd>Standing room</dd></div>
+        <div><dt class="limited">Red</dt><dd>Limited standing. Not always full.</dd></div>
+        <div><dt><span class="glyph">~</span> Tilde</dt><dd>Scheduled, not tracked live</dd></div>
+        <div><dt><span class="glyph">&mdash;</span> Dash</dt><dd>No estimate, or the data went stale</dd></div>
+      </dl>
+    </div>
+
+    <p class="transit__note">Each arrival carries its own load reading from LTA DataMall. Look up stops by name or code, and BAY65 hides estimates that have gone stale instead of showing you a guess.</p>
+  </section>
+
+  <section class="screen" id="screen" data-section aria-labelledby="screen-title">
+    <div class="screen__copy">
+      <h2 id="screen-title">Built for the remote in your&nbsp;hand.</h2>
+      <p>Every tile, card and setting is reachable with the arrows and OK. Pin favourites, keep games in Playtime, and set your own photos as the backdrop.</p>
+      <p class="hint" id="pad-hint">Try it: click a tile, then use your arrow keys or the pad below.</p>
+    </div>
+
+    <div class="launcher" id="launcher" aria-describedby="pad-hint">
+      <div class="launcher__photo" id="launcher-photo" aria-hidden="true"></div>
+      <div class="launcher__body">
+        <p class="launcher__row-title" id="fav-title">Your favourites</p>
+        <div class="tiles" role="grid" aria-labelledby="fav-title" data-cols="4">
+          <div role="row" class="tiles__row">
+            <button role="gridcell" class="tile" data-r="0" data-c="0" tabindex="0">Films</button>
+            <button role="gridcell" class="tile" data-r="0" data-c="1" tabindex="-1">Series</button>
+            <button role="gridcell" class="tile" data-r="0" data-c="2" tabindex="-1">Music</button>
+            <button role="gridcell" class="tile" data-r="0" data-c="3" tabindex="-1">News</button>
+          </div>
+          <div role="row" class="tiles__row tiles__row--play">
+            <span class="launcher__row-title launcher__row-title--inline">Playtime</span>
+            <button role="gridcell" class="tile tile--game" data-r="1" data-c="0" tabindex="-1">Puzzle</button>
+            <button role="gridcell" class="tile tile--game" data-r="1" data-c="1" tabindex="-1">Racing</button>
+          </div>
+        </div>
+        <p class="launcher__status" id="launcher-status" aria-live="polite">Films is focused</p>
+      </div>
+    </div>
+
+    <div class="screen__controls">
+      <div class="pad" role="group" aria-label="Remote control">
+        <button class="pad__btn pad__up" data-dir="up" aria-label="Up"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg></button>
+        <button class="pad__btn pad__left" data-dir="left" aria-label="Left"><svg class="icon" aria-hidden="true"><use href="#i-left"/></svg></button>
+        <button class="pad__btn pad__ok" data-dir="ok">OK</button>
+        <button class="pad__btn pad__right" data-dir="right" aria-label="Right"><svg class="icon" aria-hidden="true"><use href="#i-right"/></svg></button>
+        <button class="pad__btn pad__down" data-dir="down" aria-label="Down"><svg class="icon" aria-hidden="true"><use href="#i-down"/></svg></button>
+      </div>
+      <div class="photo-pick">
+        <label class="button button--ghost" for="photo-input">
+          <svg class="icon" aria-hidden="true"><use href="#i-image"/></svg>Use one of your photos
+        </label>
+        <input type="file" id="photo-input" accept="image/*" class="visually-hidden">
+        <p class="photo-pick__help" id="photo-help">It stays in this browser tab. Nothing is uploaded.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="assistant" id="assistant" data-section aria-labelledby="assistant-title">
+    <div class="assistant__stage">
+      <div class="orb" aria-hidden="true"><span></span></div>
+      <div class="exchange" aria-label="Example exchange">
+        <p class="exchange__q"><svg class="icon" aria-hidden="true"><use href="#i-mic"/></svg>When is my next bus?</p>
+        <p class="exchange__a">The 36 at your stop arrives in 4 minutes with seats available. The one after is about 13 minutes behind it.</p>
+      </div>
+    </div>
+    <div class="assistant__copy">
+      <h2 id="assistant-title">Ask without leaving the&nbsp;show.</h2>
+      <p>The optional BAY65 Assistant is a floating orb that answers questions about your buses and your apps, using the TV's own speech. Bring a key from Google Gemini, Groq or OpenRouter, or point it at your own Ollama server.</p>
+      <p>It stays off until you set it up.</p>
+    </div>
+
+    <div class="everywhere">
+      <h3>Everywhere Mode puts it one button away, over any&nbsp;app.</h3>
+      <ol class="steps">
+        <li><strong>Connect a provider.</strong> In Settings, choose BAY65 Assistant, enter your key and pick Save and test.</li>
+        <li><strong>Turn on Everywhere Mode.</strong> Allow BAY65 to display over other apps.</li>
+        <li><strong>Choose a shortcut.</strong> Set it to Menu, then enable BAY65 remote shortcut in Accessibility.</li>
+        <li><strong>Ask from anywhere.</strong> Press Menu over another app. Press Back to return to it.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="privacy" id="privacy" data-section aria-labelledby="privacy-title">
+    <h2 id="privacy-title">Your keys and photos stay on your&nbsp;TV.</h2>
+    <ul class="facts">
+      <li>
+        <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>
+        <div><h3>Encrypted keys</h3><p>Your LTA and assistant keys are encrypted with Android Keystore. None are bundled with the app.</p></div>
+      </li>
+      <li>
+        <svg class="icon" aria-hidden="true"><use href="#i-images"/></svg>
+        <div><h3>Private photos</h3><p>Imported photos are copied to app-private storage and shown only on your screen.</p></div>
+      </li>
+      <li>
+        <svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg>
+        <div><h3>No tracking</h3><p>No BAY65 accounts, analytics, advertising or cloud storage. Backup extraction is turned off.</p></div>
+      </li>
+      <li>
+        <svg class="icon" aria-hidden="true"><use href="#i-mic"/></svg>
+        <div><h3>Microphone on request</h3><p>The assistant listens only after you open it and ask. It never reads other apps' screens.</p></div>
+      </li>
+    </ul>
+    <p class="privacy__more"><a href="https://github.com/cjgl23/bay65/blob/main/PRIVACY.md">Read the full privacy notice</a></p>
+  </section>
+
+  <section class="build" id="build" data-section aria-labelledby="build-title">
+    <div class="build__copy">
+      <h2 id="build-title">Build it from&nbsp;source.</h2>
+      <p>BAY65 is shared as MIT-licensed source, without a public APK. You need JDK&nbsp;17 or later and Android SDK platform&nbsp;36 for TVs running Android&nbsp;8.0 and up.</p>
+      <ul class="doclinks">
+        <li><a href="https://github.com/cjgl23/bay65/blob/main/android/README.md"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Android setup</a></li>
+        <li><a href="https://github.com/cjgl23/bay65/blob/main/android/EVERYWHERE.md"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Everywhere Mode guide</a></li>
+        <li><a href="https://github.com/cjgl23/bay65/blob/main/CONTRIBUTING.md"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Contributing</a></li>
+        <li><a href="https://github.com/cjgl23/bay65/blob/main/CHANGELOG.md"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Changelog</a></li>
+      </ul>
+    </div>
+    <div class="terminal">
+      <div class="terminal__bar">
+        <span>Terminal</span>
+        <button class="copy" type="button" data-copy="build-cmds"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button>
+      </div>
+<pre id="build-cmds"><code><span class="c"># Get the code</span>
+git clone https://github.com/cjgl23/bay65.git
+cd bay65/android
+
+<span class="c"># Build, test and lint a debug APK</span>
+./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug</code></pre>
+      <div class="terminal__alt">
+<pre><code><span class="c"># Or try the browser preview first</span>
+python3 server.py   <span class="c"># then open http://127.0.0.1:8765</span></code></pre>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer__brand">
+    <img src="/assets/logo.svg" width="44" height="44" alt="">
+    <p><span class="wordmark">bay<span>65</span></span><br>Your home. Your city. Your screen.</p>
+  </div>
+  <div class="footer__legal">
+    <p>Original source under the <a href="https://github.com/cjgl23/bay65/blob/main/LICENSE">MIT License</a>. Bus data from Singapore LTA DataMall, under its <a href="https://github.com/cjgl23/bay65/blob/main/DATA-ATTRIBUTION.md">terms of use</a>.</p>
+    <p>An independent personal project, not affiliated with or endorsed by LTA, Google or any streaming or game provider. App artwork in the screenshot belongs to its owners and is not part of BAY65.</p>
+  </div>
+  <ul class="footer__links">
+    <li><a href="https://github.com/cjgl23/bay65/blob/main/PRIVACY.md">Privacy</a></li>
+    <li><a href="https://github.com/cjgl23/bay65/blob/main/SECURITY.md">Security</a></li>
+    <li><a href="https://github.com/cjgl23/bay65/blob/main/THIRD-PARTY-NOTICES.md">Notices</a></li>
+    <li><a href="https://github.com/cjgl23/bay65">GitHub</a></li>
+  </ul>
+</footer>
+</body>
+</html>

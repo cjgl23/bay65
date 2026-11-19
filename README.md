@@ -55,6 +55,16 @@ python3 server.py
 
 Open http://127.0.0.1:8765. In Settings → BAY65 preferences, add your own stops and services, then connect your own LTA DataMall API Access Key. The Python server requires no external runtime dependencies and binds to loopback only. The browser preview cannot control TV settings or discover installed TV apps.
 
+## Website
+
+The landing page lives in [`website/`](website/) as a static site with no build step. The root [`vercel.json`](vercel.json) serves it on Vercel: import this repository as a new Vercel project and deploy with the default settings. To preview locally:
+
+```sh
+python3 -m http.server 8080 -d website
+```
+
+See [website/README.md](website/README.md) for structure, design notes and deployment details.
+
 ## Build the Android app
 
 Requires JDK 17+, Android SDK platform 36 and build-tools 36.0.0. From the repository:
@@ -75,6 +85,7 @@ BAY65 uses Singapore LTA DataMall data. Obtain and protect your own API key. See
 ## Project documentation
 
 - [Changelog](CHANGELOG.md)
+- [Website and Vercel deployment](website/README.md)
 - [Contributing and development checks](CONTRIBUTING.md)
 - [Android build, testing and setup](android/README.md)
 - [Validation evidence](android/VALIDATION.md)

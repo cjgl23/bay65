@@ -72,6 +72,7 @@ public final class NookChecks extends Instrumentation {
             check(!pm.getActivityInfo(new android.content.ComponentName(context,AssistantActivity.class),0).exported,"Assistant panel must not be exported");
             check(!pm.getServiceInfo(new android.content.ComponentName(context,OrbOverlayService.class),0).exported,"Overlay service must not be exported");
             check(!pm.getReceiverInfo(new android.content.ComponentName(context,EverywhereBootReceiver.class),0).exported,"Restart receiver must not be exported");
+            check(android.Manifest.permission.BIND_NOTIFICATION_LISTENER_SERVICE.equals(pm.getServiceInfo(new android.content.ComponentName(context,NowPlayingService.class),0).permission),"Now Playing listener must be bindable only by Android");
             if(!context.getSharedPreferences("nook",Context.MODE_PRIVATE).getBoolean(Everywhere.ENABLED,false))
                 check(pm.getComponentEnabledSetting(new android.content.ComponentName(context.getPackageName(),"app.nook.tv.AskBay65"))!=android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED,"Ask BAY65 must stay hidden until Everywhere Mode is on");
             SecretStore secret=new SecretStore(context);String savedKey=secret.read();boolean testSecret=savedKey==null;

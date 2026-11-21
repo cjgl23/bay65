@@ -40,6 +40,8 @@ final class AgentSettings {
 
     boolean share() { return preferences.getBoolean("agent_share", true); }
 
+    boolean shareNowPlaying() { return preferences.getBoolean(NowPlaying.SHARE, false); }
+
     /** The request for one question. The context string is built by the caller from what it can see. */
     Agent.Call call(List<Agent.Turn> history, String question, boolean allowSearch, String context, String key) {
         Agent.Provider provider = provider();

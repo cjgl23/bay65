@@ -27,6 +27,10 @@ After each step, press the orb once more and speak. **Expected: the orb turns te
 
 If a step fails, note the step number, whether it happened on the home screen or in the Ask BAY65 panel, and take a photo of the screen. Do not record personal values or credentials.
 
+## Now playing (unreleased)
+
+JVM tests cover the now-playing context line (watching, paused music, missing title, no media), its independence from the bus/app sharing setting, flattening and shortening of untrusted media text, and the prompt guidance for "what is this" questions. The instrumentation runner asserts that `NowPlayingService` is bindable only with `BIND_NOTIFICATION_LISTENER_SERVICE` (compiled, not yet run). Locally, JVM unit tests, release and TV lint, and debug, TV and instrumentation assembly passed. Media-session reading and the Notification access flow have not been verified on a device or emulator; see checklist rows 28–29 in [Everywhere Mode](EVERYWHERE.md#physical-tv-acceptance-checklist).
+
 ## Everywhere Mode (unreleased)
 
 Existing Everywhere Mode coverage includes JVM tests for overlay visibility, dimming, drift and frame rate, plus the shared context builder. The development instrumentation runner contains assertions for the non-exported panel, overlay service and restart receiver, and for the Ask BAY65 alias being disabled by default; this is distinct from the new accessibility service, which is exported under Android’s `BIND_ACCESSIBILITY_SERVICE` permission.

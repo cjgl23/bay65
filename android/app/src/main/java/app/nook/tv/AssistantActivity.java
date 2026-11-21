@@ -146,7 +146,8 @@ public final class AssistantActivity extends Activity implements AssistantPresen
             Long when = fetched.get(stop.code);
             stops.add(new AssistantContext.Stop(stop.name, stop.code, stop.services, arrivals.get(stop.code), when == null ? 0 : when));
         }
-        return AssistantContext.build(settings.share(), ltaConnected, stops, favourites, games, System.currentTimeMillis());
+        return AssistantContext.build(settings.share(), ltaConnected, stops, favourites, games,
+                NowPlaying.current(this, settings.shareNowPlaying()), System.currentTimeMillis());
     }
 
     /** Opening "Ask BAY65" again while the panel exists starts a new question in the same panel. */

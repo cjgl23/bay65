@@ -57,13 +57,13 @@ Open http://127.0.0.1:8765. In Settings → BAY65 preferences, add your own stop
 
 ## Website
 
-The landing page lives in [`website/`](website/) as a static site with no build step. The root [`vercel.json`](vercel.json) serves it on Vercel: import this repository as a new Vercel project and deploy with the default settings. To preview locally:
+The landing page lives in [`website/`](website/) as a static site with no build step. The [Pages workflow](.github/workflows/pages.yml) publishes it to GitHub Pages at https://cjgl23.github.io/bay65/ whenever `website/` changes on `main`. To preview locally:
 
 ```sh
 python3 -m http.server 8080 -d website
 ```
 
-See [website/README.md](website/README.md) for structure, design notes and deployment details.
+See [website/README.md](website/README.md) for structure, design notes and the one-time Pages setup.
 
 ## Build the Android app
 
@@ -85,7 +85,7 @@ BAY65 uses Singapore LTA DataMall data. Obtain and protect your own API key. See
 ## Project documentation
 
 - [Changelog](CHANGELOG.md)
-- [Website and Vercel deployment](website/README.md)
+- [Website and GitHub Pages deployment](website/README.md)
 - [Contributing and development checks](CONTRIBUTING.md)
 - [Android build, testing and setup](android/README.md)
 - [Validation evidence](android/VALIDATION.md)

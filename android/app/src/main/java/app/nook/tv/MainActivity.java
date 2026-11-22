@@ -77,6 +77,7 @@ public class MainActivity extends Activity {
     private View busSpacer;
     private TextView timeLabel,dateLabel;
     private Dialog settingsDialog;
+    private TextView nowPlayingAccess;
     private LinearLayout page;
     private TextView dialogTitle;
     private ScrollView settingsScroll;
@@ -168,6 +169,8 @@ public class MainActivity extends Activity {
         AssistantPresence.listen(presence);presence.onPresenceChanged();
         finishEverywhereSetup();
         OrbOverlayService.sync(this);
+        // Returning from Android's Notification access screen.
+        if(nowPlayingAccess!=null&&nowPlayingAccess.isAttachedToWindow())nowPlayingAccess.setText(nowPlayingAccessLabel());
     }
     @Override protected void onNewIntent(Intent intent){
         super.onNewIntent(intent);setIntent(intent);
@@ -337,6 +340,16 @@ public class MainActivity extends Activity {
         paragraph("Pair a new remote or accessory, or manage paired devices in Android settings → Remotes & accessories.");
         page.addView(button("Pair a remote or accessory",()->openSystem("com.google.android.intent.action.CONNECT_INPUT")));
         page.addView(button("Manage paired devices in Android settings",()->{message("Choose Remotes & accessories in Android settings.");openSystem(Settings.ACTION_SETTINGS);}));focusPage();
+    }
+    private String nowPlayingAccessLabel(){return "Notification access · "+(NowPlaying.granted(this)?"Allowed":"Allow in Android settings");}
+    /** Notification access for BAY65 Now Playing, which unlocks media titles only. */
+    private void showNowPlayingAccess(){
+        if(trySystemAction(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))return;
+        openPage("now-playing-access","Notification access");pageBack=this::showAssistantSettings;
+        paragraph("This TV does not provide a Notification access screen. Some TVs have it under Android settings → Apps → Special app access → Notification access. Otherwise grant it once from a computer with Android's adb tool:");
+        TextView command=text("adb shell cmd notification allow_listener "+NowPlaying.listener(this).flattenToString(),13,INK);command.setTypeface(Typeface.MONOSPACE);command.setPadding(0,dp(4),0,dp(12));command.setTextIsSelectable(true);page.addView(command);
+        paragraph("To remove it later, run the same command with disallow_listener, or turn the setting off. Some low-memory TVs do not allow notification access at all; the assistant then works as before without knowing what is playing.");
+        page.addView(button("Open Android settings",()->openSystem(Settings.ACTION_SETTINGS)));focusPage();
     }
     private void showAccessibility(){
         if(trySystemAction(Settings.ACTION_ACCESSIBILITY_SETTINGS))return;
@@ -598,14 +611,14 @@ public class MainActivity extends Activity {
             @Override public void openSettings(){showAssistantSettings();}
         },orb,bubble,status,question,answer);
     }
-    /** Only what the user agreed to share: stop names, codes, live arrivals and favourite app names. */
     /** Only what the user agreed to share; the launcher uses its cached arrivals (no extra LTA requests). */
     private String assistantContext(){
         List<AssistantContext.Stop> stops=new ArrayList<>();
         for(NookStore.Stop stop:store.stops){ArrivalState state=arrivalStates.get(stop.code);stops.add(new AssistantContext.Stop(stop.name,stop.code,stop.services,state==null?null:state.data,state==null?0:state.updated));}
         List<String> favourites=new ArrayList<>();for(AppRepository.Entry entry:apps.section(store,"favourites"))favourites.add(entry.label);
         List<String> games=new ArrayList<>();for(AppRepository.Entry entry:apps.section(store,"playtime"))games.add(entry.label);
-        return AssistantContext.build(store.preferences.getBoolean("agent_share",true),apiKey!=null,stops,favourites,games,System.currentTimeMillis());
+        AssistantContext.Media media=NowPlaying.current(this,store.preferences.getBoolean(NowPlaying.SHARE,false));
+        return AssistantContext.build(store.preferences.getBoolean("agent_share",true),apiKey!=null,stops,favourites,games,media,System.currentTimeMillis());
     }
     private void showAssistantSettings(){showAssistantSettings(null);}
     private void showAssistantSettings(Agent.Provider chosen){
@@ -631,6 +644,10 @@ public class MainActivity extends Activity {
         }
         CheckBox share=new CheckBox(this);share.setText("Include my bus stops, live arrivals, and favourite app and game names in questions");share.setTextColor(INK);share.setTextSize(14);share.setChecked(store.preferences.getBoolean("agent_share",true));share.setPadding(0,dp(7),0,dp(7));
         share.setOnCheckedChangeListener((b,checked)->store.preferences.edit().putBoolean("agent_share",checked).apply());page.addView(share);
+        CheckBox watching=new CheckBox(this);watching.setText("Share what I'm watching with the assistant");watching.setTextColor(INK);watching.setTextSize(14);watching.setChecked(store.preferences.getBoolean(NowPlaying.SHARE,false));watching.setPadding(0,dp(7),0,dp(7));
+        watching.setOnCheckedChangeListener((b,checked)->{store.preferences.edit().putBoolean(NowPlaying.SHARE,checked).apply();if(checked&&!NowPlaying.granted(this))showNowPlayingAccess();});page.addView(watching);
+        paragraph("Lets you ask \"What is this movie about?\" The app name, title, artist and episode that the playing app shows in Android's media controls are sent with your question. This needs Android's Notification access, a sensitive special permission. Android warns that it allows reading notifications, but BAY65 uses it only for media titles: it reads no notifications and never reads the screen.");
+        nowPlayingAccess=button(nowPlayingAccessLabel(),this::showNowPlayingAccess);page.addView(nowPlayingAccess);
         TextView status=text("",13,MUTED);status.setPadding(0,dp(8),0,dp(12));page.addView(status);
         TextView save=button("Save and test",()->{});page.addView(save);
         save.setOnClickListener(v->{

@@ -20,6 +20,7 @@
         <intent><action android:name="android.settings.WIRELESS_SETTINGS" /></intent>
         <intent><action android:name="android.settings.BLUETOOTH_SETTINGS" /></intent>
         <intent><action android:name="android.settings.ACCESSIBILITY_SETTINGS" /></intent>
+        <intent><action android:name="android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS" /></intent>
         <intent><action android:name="android.settings.HOME_SETTINGS" /></intent>
         <intent><action android:name="android.settings.DEVICE_INFO_SETTINGS" /></intent>
         <intent><action android:name="com.google.android.intent.action.CONNECT_INPUT" /></intent>
@@ -75,6 +76,13 @@
             android:label="@string/shortcut_name" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter>
             <meta-data android:name="android.accessibilityservice" android:resource="@xml/remote_shortcut" />
+        </service>
+        <!-- Optional "Share what I'm watching" (off by default). Holds only the Notification access grant that
+             Android requires before it reveals other apps' media sessions (title, artist, playing state). It
+             reads no notifications, unbinds as soon as it connects, and never reads screen content. -->
+        <service android:name=".NowPlayingService" android:exported="true"
+            android:label="@string/now_playing_name" android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter><action android:name="android.service.notification.NotificationListenerService" /></intent-filter>
         </service>
         <receiver android:name=".EverywhereBootReceiver" android:exported="false">
             <intent-filter>

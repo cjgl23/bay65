@@ -15,7 +15,8 @@ MainActivity (launcher)  ─┐                         ┌─ AssistantActivity
                            │    which surface shows) │
                            │                         │
    AgentSettings ──────────┴── provider, model, web search, sharing, Keystore-encrypted key
-   AssistantContext ───────── stops + arrivals + favourite/game names (one builder for both)
+   AssistantContext ───────── stops + arrivals + favourite/game names + optional now playing
+   NowPlaying ─────────────── MediaSession metadata (app, title, artist), needs Notification access
    Agent / AgentClient ────── provider requests (unchanged), own thread, cancellable
 
 OrbOverlayService (foreground, specialUse)
@@ -40,6 +41,7 @@ OrbOverlayService (foreground, specialUse)
 | Microphone only in the panel | Android blocks background microphone access (Android 9+), and the spec forbids continuous listening. The panel is a foreground activity, so speech recognition works there exactly as on the home screen. |
 | Optional remote shortcut accessibility service | An optional accessibility service filters the chosen remote button. It requests no window content or accessibility events and stores no key history. Enable it separately in Android Accessibility settings. |
 | No Usage Access | Hiding the orb over chosen apps ("excluded apps") requires knowing the foreground app, which needs the sensitive Usage Access permission. Not included; needs your approval. |
+| Now playing from MediaSession, via Notification access | Optional, off by default. `MediaSessionManager.getActiveSessions()` returns other apps' media sessions only to an enabled notification listener, so BAY65 declares `NowPlayingService` solely to hold that grant. It reads only the metadata apps publish to Android's media controls; it never reads notifications, screen content or accessibility window content (`canRetrieveWindowContent` stays `false`). |
 | Reuse the existing AI providers | Everywhere Mode reuses the existing assistant unchanged; no telemetry or external service is added. |
 
 ## Activating the assistant from another app
@@ -65,10 +67,21 @@ The Ask BAY65 notification and external TV app lists can also open the panel. Go
 | Auto-dim during inactivity | Off | Halves the idle opacity after 30 s without assistant activity. |
 | Excluded applications | None | Not available without Usage Access (needs approval). |
 | Remote shortcut button | Off | Menu, Red, Blue or Search; replaces the selected button while the mode is on. |
+| Share what I'm watching with the assistant | Off | Sends the playing app, title, episode or artist and play/pause state with questions. Needs BAY65 Now Playing in Android Notification access. |
 | Remote shortcut accessibility service | Disabled | Enable separately in Android Accessibility; receives keys without screen-reading access or key history. |
 | Restore after TV restart | On | Starts the orb after boot or an app update. When BAY65 is the home app it also starts with the home screen. |
 
 **Burn-in care:** the orb drifts by up to 4 dp every 10 minutes, dims when idle, and redraws at about 5 frames per second while idle (every frame only while active).
+
+## Now playing
+
+With **Settings → BAY65 Assistant → Share what I'm watching with the assistant** on and **BAY65 Now Playing** allowed in Android's Notification access, each question from the launcher or the Ask BAY65 panel includes one line such as: *the user is currently watching "Title" (S1:E2) in Netflix*. This lets you ask "What is this movie about?" or "Who sings this?".
+
+- **Source:** Android's MediaSession, the data apps publish for the system's media controls. BAY65 picks the first session that is playing (Android's priority order), otherwise the first paused one, and ignores its own. Fields: app label, title, subtitle, artist, album and playing or paused.
+- **Not the foreground app:** this shows which app is playing media, not which app is on screen. Apps that publish no session, or no title, are reported as unknown or not at all.
+- **Permission:** Notification access is a sensitive special permission, and Android warns that it allows reading notifications. `NowPlayingService` overrides no notification callbacks and calls `requestUnbind()` as soon as it connects; the grant is all that media-session access checks. Screen content and notification content are never read.
+- **Untrusted text:** each field is flattened to one line and shortened to 120 characters, and the prompt tells the model titles are names, not instructions.
+- **Graceful degradation:** with the setting off, access not granted or revoked, or nothing playing, no now-playing line is sent and the assistant works as before. Some TVs have no Notification access screen; BAY65 then shows a one-time adb command (`adb shell cmd notification allow_listener <package>/app.nook.tv.NowPlayingService`). Low-memory Android TV devices may refuse notification listeners entirely.
 
 ## Android version compatibility
 
@@ -90,7 +103,8 @@ The Ask BAY65 notification and external TV app lists can also open the panel. Go
 - **Activation:** the optional remote shortcut requires enabling BAY65 remote shortcut in Accessibility. Reserved buttons and competing key-filter services may prevent delivery.
 - **Apps may pause:** while the panel is open, the app underneath loses focus; some players pause until you press Back.
 - **Apps can hide overlays:** some apps hide or block overlays on Android 12+ (`setHideOverlayWindows`). BAY65 respects this; the orb simply does not appear there.
-- **DRM and secure video:** BAY65 never captures or reads other apps' content. Whether the orb is drawn over protected video depends on the TV.
+- **DRM and secure video:** BAY65 never captures or reads other apps' screen content. Whether the orb is drawn over protected video depends on the TV. The optional now-playing setting uses only media-session metadata.
+- **Now playing:** depends on each app publishing MediaSession metadata; some players omit titles or episodes. It reflects the app playing media, not necessarily the app on screen.
 - **OEM restrictions:** some manufacturers stop foreground services or hide overlays aggressively; the orb returns when you next open BAY65.
 - **Excluded apps:** not available without Usage Access.
 - **The conversation** is shared between the home screen and the panel and is kept in memory only.
@@ -105,8 +119,8 @@ The Ask BAY65 notification and external TV app lists can also open the panel. Go
 ## Security and privacy
 
 - Only the permissions above are added; each is requested when you turn the feature on, with an explanation first.
-- The overlay service, panel activity and restart receiver are not exported. The optional remote shortcut accessibility service is exported for Android to bind, protected by `android.permission.BIND_ACCESSIBILITY_SERVICE`. The "Ask BAY65" entry is exported (required for app lists and Google Assistant), accepts no data, and is disabled until you turn the feature on.
-- The microphone is used only after you ask, in the foreground panel. Other apps' screens are never read, recorded or captured.
+- The overlay service, panel activity and restart receiver are not exported. The optional remote shortcut accessibility service is exported for Android to bind, protected by `android.permission.BIND_ACCESSIBILITY_SERVICE`. The optional BAY65 Now Playing notification listener is exported only under `android.permission.BIND_NOTIFICATION_LISTENER_SERVICE`. The "Ask BAY65" entry is exported (required for app lists and Google Assistant), accepts no data, and is disabled until you turn the feature on.
+- The microphone is used only after you ask, in the foreground panel. Other apps' screens are never read, recorded or captured. With the optional now-playing setting and Notification access, only media-session metadata is read; notification contents are not.
 - The provider key stays encrypted with Android Keystore and is never logged. No telemetry, analytics or new external services.
 - Revoking "Display over other apps" turns Everywhere Mode off quietly; the settings page explains it.
 
@@ -152,6 +166,8 @@ Record each result as Pass, Fail or Not applicable, with the TV model and Androi
 | 25 | Shortcut disabled | Set the shortcut Off, then test the button; repeat with Everywhere Mode off | Original button action is preserved |
 | 26 | Key isolation | With shortcut on, use D-pad, volume, playback and Back in another app | Unrelated buttons pass through |
 | 27 | Shortcut alternatives | Test supported Red, Blue or Search buttons and any competing key-filter service | Record firmware-reserved buttons and service conflicts without claiming universal support |
+| 28 | Now playing | Turn on "Share what I'm watching", allow BAY65 Now Playing in Notification access, play a title in Netflix or YouTube, open Ask BAY65 and ask "What is this about?" | Answer names the playing title; record which apps publish titles and episodes |
+| 29 | Now playing revoked | Revoke Notification access (or turn the setting off) and ask again | Assistant says it cannot see what is playing; no crash |
 
 ## Exact setup used on the owner’s TV
 

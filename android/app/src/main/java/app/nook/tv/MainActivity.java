@@ -77,6 +77,7 @@ public class MainActivity extends Activity {
     private View busSpacer;
     private TextView timeLabel,dateLabel;
     private Dialog settingsDialog;
+    private TextView nowPlayingAccess;
     private LinearLayout page;
     private TextView dialogTitle;
     private ScrollView settingsScroll;
@@ -168,6 +169,8 @@ public class MainActivity extends Activity {
         AssistantPresence.listen(presence);presence.onPresenceChanged();
         finishEverywhereSetup();
         OrbOverlayService.sync(this);
+        // Returning from Android's Notification access screen.
+        if(nowPlayingAccess!=null&&nowPlayingAccess.isAttachedToWindow())nowPlayingAccess.setText(nowPlayingAccessLabel());
     }
     @Override protected void onNewIntent(Intent intent){
         super.onNewIntent(intent);setIntent(intent);
@@ -338,6 +341,7 @@ public class MainActivity extends Activity {
         page.addView(button("Pair a remote or accessory",()->openSystem("com.google.android.intent.action.CONNECT_INPUT")));
         page.addView(button("Manage paired devices in Android settings",()->{message("Choose Remotes & accessories in Android settings.");openSystem(Settings.ACTION_SETTINGS);}));focusPage();
     }
+    private String nowPlayingAccessLabel(){return "Notification access · "+(NowPlaying.granted(this)?"Allowed":"Allow in Android settings");}
     /** Notification access for BAY65 Now Playing, which unlocks media titles only. */
     private void showNowPlayingAccess(){
         if(trySystemAction(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))return;
@@ -643,7 +647,7 @@ public class MainActivity extends Activity {
         CheckBox watching=new CheckBox(this);watching.setText("Share what I'm watching with the assistant");watching.setTextColor(INK);watching.setTextSize(14);watching.setChecked(store.preferences.getBoolean(NowPlaying.SHARE,false));watching.setPadding(0,dp(7),0,dp(7));
         watching.setOnCheckedChangeListener((b,checked)->{store.preferences.edit().putBoolean(NowPlaying.SHARE,checked).apply();if(checked&&!NowPlaying.granted(this))showNowPlayingAccess();});page.addView(watching);
         paragraph("Lets you ask \"What is this movie about?\" The app name, title, artist and episode that the playing app shows in Android's media controls are sent with your question. This needs Android's Notification access, a sensitive special permission. Android warns that it allows reading notifications, but BAY65 uses it only for media titles: it reads no notifications and never reads the screen.");
-        page.addView(button("Notification access · "+(NowPlaying.granted(this)?"Allowed":"Allow in Android settings"),this::showNowPlayingAccess));
+        nowPlayingAccess=button(nowPlayingAccessLabel(),this::showNowPlayingAccess);page.addView(nowPlayingAccess);
         TextView status=text("",13,MUTED);status.setPadding(0,dp(8),0,dp(12));page.addView(status);
         TextView save=button("Save and test",()->{});page.addView(save);
         save.setOnClickListener(v->{

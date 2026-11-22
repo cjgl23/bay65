@@ -1,6 +1,6 @@
 # BAY65 website
 
-The public landing page for BAY65. It is a static site (HTML, CSS and a small script) with no build step and no runtime dependencies, so it deploys to Vercel as-is.
+The public landing page for BAY65. It is a static site (HTML, CSS and a small script) with no build step and no runtime dependencies, so it is published to GitHub Pages as-is.
 
 ## Files
 
@@ -9,7 +9,8 @@ The public landing page for BAY65. It is a static site (HTML, CSS and a small sc
 | `index.html` | The landing page |
 | `styles.css` | All styles and design tokens (colours, radii, type) |
 | `main.js` | Progressive enhancements: route rail, sample arrival board, remote-control demo, photo preview, copy button |
-| `404.html` | Not-found page, served automatically by Vercel |
+| `404.html` | Not-found page, served automatically by GitHub Pages |
+| `.nojekyll` | Tells GitHub Pages to publish files as they are |
 | `assets/fonts/` | Self-hosted Bricolage Grotesque variable font (SIL Open Font License, see `OFL.txt`) |
 | `assets/img/` | WebP home-screen screenshots and the 1200×630 social share image (`og.png`) |
 | `assets/logo.svg` | BAY65 mark, also used as the favicon |
@@ -26,29 +27,25 @@ python3 -m http.server 8080 -d website
 
 Then open http://127.0.0.1:8080.
 
-## Deploy to Vercel
+## Deploy to GitHub Pages
 
-The root `vercel.json` tells Vercel to skip install and build steps and serve the `website/` folder. It also sets security headers (including a strict Content Security Policy) and caching for `/assets`.
+The workflow in [`.github/workflows/pages.yml`](../.github/workflows/pages.yml) publishes this folder to GitHub Pages whenever `website/` changes on `main`. It can also be run by hand from the **Actions** tab (**Pages → Run workflow**).
 
-**From the dashboard**
+**One-time setup**
 
-1. In Vercel, choose **Add New → Project** and import `cjgl23/bay65`.
-2. Leave **Framework Preset** as **Other** and **Root Directory** as the repository root. `vercel.json` supplies the rest.
-3. Choose **Deploy**. Every push to `main` then deploys to production, and pull requests get preview URLs.
+1. In the repository, open **Settings → Pages**.
+2. Under **Build and deployment → Source**, choose **GitHub Actions**.
+3. Run the **Pages** workflow once (or push a change to `website/`).
 
-**From the CLI**
+The site is then live at https://cjgl23.github.io/bay65/.
 
-```bash
-npm i -g vercel
-```
+**Things to keep in mind**
 
-```bash
-vercel        # preview deployment
-```
-
-```bash
-vercel --prod # production deployment
-```
+- The site is served from the `/bay65/` subpath, so every link to a local file is relative (`assets/...`, not `/assets/...`). Keep it that way when adding files.
+- GitHub Pages cannot set custom HTTP headers. The Content Security Policy and referrer policy are set with `<meta>` tags in `index.html` instead.
+- `.nojekyll` turns off Jekyll processing, so files are published exactly as they are.
+- `404.html` is served automatically for missing pages.
+- The social share image (`og:image`) and `og:url` use the full `https://cjgl23.github.io/bay65/` address. Update them if you add a custom domain.
 
 ## Design notes
 

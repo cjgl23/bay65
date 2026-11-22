@@ -7,16 +7,19 @@
 <meta name="description" content="BAY65 is an open-source Android TV launcher with live Singapore bus arrivals, your favourite apps, your own photos and an optional voice assistant.">
 <meta name="theme-color" content="#0C1825">
 <meta name="color-scheme" content="dark">
-<link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
-<link rel="preload" href="/assets/fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/assets/img/home-screen.webp" as="image" type="image/webp" fetchpriority="high">
-<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/img/home-screen.webp" as="image" type="image/webp" fetchpriority="high">
+<link rel="stylesheet" href="styles.css">
 <meta property="og:type" content="website">
 <meta property="og:title" content="BAY65: Home is your next stop">
 <meta property="og:description" content="An Android TV launcher with live Singapore bus arrivals, your favourite apps and your own photos on one screen.">
-<meta property="og:image" content="/assets/img/og.png">
+<meta property="og:image" content="https://cjgl23.github.io/bay65/assets/img/og.png">
+<meta property="og:url" content="https://cjgl23.github.io/bay65/">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob: data:; style-src 'self'; script-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="twitter:card" content="summary_large_image">
-<script src="/main.js" defer></script>
+<script src="main.js" defer></script>
 </head>
 <body>
 <svg width="0" height="0" class="sprite" aria-hidden="true">
@@ -40,7 +43,7 @@
 
 <header class="masthead">
   <a class="brand" href="#top" aria-label="BAY65 home">
-    <img src="/assets/logo.svg" width="36" height="36" alt="">
+    <img src="assets/logo.svg" width="36" height="36" alt="">
     <span class="wordmark">bay<span>65</span></span>
   </a>
   <a class="button button--ghost" href="https://github.com/cjgl23/bay65">
@@ -74,8 +77,8 @@
     </div>
     <figure class="tv">
       <div class="tv__screen">
-        <img src="/assets/img/home-screen.webp"
-             srcset="/assets/img/home-screen-1000.webp 1000w, /assets/img/home-screen.webp 1672w"
+        <img src="assets/img/home-screen.webp"
+             srcset="assets/img/home-screen-1000.webp 1000w, assets/img/home-screen.webp 1672w"
              sizes="(min-width: 1100px) 78vw, 100vw"
              width="1672" height="941" fetchpriority="high"
              alt="The BAY65 home screen on a TV: four bus stop cards with colour-coded arrival times, a row of favourite apps and a Playtime row of games.">
@@ -249,7 +252,7 @@ python3 server.py   <span class="c"># then open http://127.0.0.1:8765</span></co
 
 <footer class="footer">
   <div class="footer__brand">
-    <img src="/assets/logo.svg" width="44" height="44" alt="">
+    <img src="assets/logo.svg" width="44" height="44" alt="">
     <p><span class="wordmark">bay<span>65</span></span><br>Your home. Your city. Your screen.</p>
   </div>
   <div class="footer__legal">

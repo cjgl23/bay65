@@ -4,6 +4,7 @@ This records released source versions and significant changes. It does not imply
 
 ## Unreleased
 
+- Publish the landing page with GitHub Pages instead of Vercel: add the Pages workflow, make all site paths relative for the `/bay65/` subpath, move security policies into `<meta>` tags and remove `vercel.json`.
 - Add optional now-playing awareness for the assistant (off by default): with **Share what I'm watching with the assistant** on and BAY65 Now Playing allowed in Android Notification access, questions such as "What is this movie about?" include the playing app, title, episode or artist and play/pause state from Android's media controls. Uses MediaSession metadata only; no screen content, notification content or accessibility window content is read. New component: a notification listener that holds the grant and unbinds immediately. Without the grant the assistant works as before. See [Everywhere Mode](android/EVERYWHERE.md#now-playing).
 - Add the BAY65 landing page in `website/` (static, no build step) with a root `vercel.json` for Vercel deployment, security headers and asset caching. See [website/README.md](website/README.md).
 - Fix: pressing the orb could keep opening the TV's system voice screen ("Ask BAY65" bar at the top) instead of listening in BAY65. The voice fallback no longer remembers anything between presses, silence shows "I didn't hear anything" instead of opening the system screen, and the stuck setting from 0.3.0 is cleared on start.
